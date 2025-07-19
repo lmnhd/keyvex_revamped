@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 
 /**
  * Tool Testing Page - Immediate visualization and testing
@@ -15,13 +16,13 @@ export default function TestPage() {
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Sample tools for testing
+  // Sample tools for testing with theme-aware styling
   const sampleTools: Tool[] = [
     {
       id: 'calc-001',
       title: 'Solar Panel Savings Calculator',
       type: 'calculator',
-      componentCode: `
+      componentCode: convertToThemeAware(`
 function SolarCalculator() {
   const [homeSize, setHomeSize] = useState('medium');
   const [monthlyBill, setMonthlyBill] = useState(150);
@@ -85,7 +86,7 @@ function SolarCalculator() {
       )}
     </div>
   );
-}`,
+}`),
       leadCapture: {
         emailRequired: true,
         trigger: 'after_results',
@@ -98,7 +99,7 @@ function SolarCalculator() {
       id: 'quiz-001', 
       title: 'Neighborhood Ranking Quiz',
       type: 'quiz',
-      componentCode: `
+      componentCode: convertToThemeAware(`
 function NeighborhoodQuiz() {
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState(null);
@@ -161,7 +162,7 @@ function NeighborhoodQuiz() {
       )}
     </div>
   );
-}`,
+}`),
       leadCapture: {
         emailRequired: true,
         trigger: 'after_results', 

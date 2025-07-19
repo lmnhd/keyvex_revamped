@@ -209,8 +209,8 @@ export function DynamicComponentRenderer({
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
-          <p className="text-sm text-gray-600">Rendering component...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+          <p className="text-sm text-muted-foreground">Rendering component...</p>
         </div>
       </div>
     );
@@ -243,9 +243,9 @@ export function DynamicComponentRenderer({
    */
   if (!renderState.Component) {
     return (
-      <div className={`p-8 border-2 border-dashed border-gray-300 rounded-lg text-center ${className}`}>
-        <div className="text-gray-400 mb-2">📝</div>
-        <p className="text-gray-500 text-sm">No component to render</p>
+      <div className={`p-8 border-2 border-dashed border-border rounded-lg text-center ${className}`}>
+        <div className="text-muted-foreground mb-2">📝</div>
+        <p className="text-muted-foreground text-sm">No component to render</p>
       </div>
     );
   }

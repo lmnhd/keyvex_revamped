@@ -30,8 +30,8 @@ export function ToolRenderer({ tool, isLoading = false, className = '' }: ToolRe
     return (
       <div className={`flex items-center justify-center p-12 ${className}`}>
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-blue-500" />
-          <p className="text-sm text-gray-600">Generating tool...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-primary" />
+          <p className="text-sm text-muted-foreground">Generating tool...</p>
         </div>
       </div>
     );
@@ -40,10 +40,10 @@ export function ToolRenderer({ tool, isLoading = false, className = '' }: ToolRe
   // Show placeholder when no tool
   if (!tool) {
     return (
-      <div className={`p-8 border-2 border-dashed border-gray-300 rounded-lg text-center ${className}`}>
-        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-medium text-gray-600 mb-2">No Tool Loaded</h3>
-        <p className="text-sm text-gray-500">Create or select a tool to see it rendered here</p>
+      <div className={`p-8 border-2 border-dashed border-border rounded-lg text-center ${className}`}>
+        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-lg font-medium text-foreground mb-2">No Tool Loaded</h3>
+        <p className="text-sm text-muted-foreground">Create or select a tool to see it rendered here</p>
       </div>
     );
   }
@@ -71,12 +71,12 @@ export function ToolRenderer({ tool, isLoading = false, className = '' }: ToolRe
   // Render the tool
   return (
     <div className={`w-full ${className}`} ref={wrapperRef}>
-      <div className="border rounded-lg p-6 bg-white shadow-sm">
+      <div className="border border-border rounded-lg p-6 bg-card text-card-foreground shadow-sm">
         {/* Tool Header */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">{tool.title}</h2>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+          <h2 className="text-xl font-semibold text-foreground mb-2">{tool.title}</h2>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs font-medium">
               {tool.type}
             </span>
             <span>•</span>
@@ -91,12 +91,12 @@ export function ToolRenderer({ tool, isLoading = false, className = '' }: ToolRe
         
         {/* Lead Capture Preview */}
         {tool.leadCapture.emailRequired && (
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-700 mb-2">
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
+              <p className="text-sm text-primary mb-2">
                 📧 Lead Capture: {tool.leadCapture.incentive}
               </p>
-              <p className="text-xs text-blue-600">
+              <p className="text-xs text-primary/80">
                 Trigger: {tool.leadCapture.trigger}
               </p>
             </div>
