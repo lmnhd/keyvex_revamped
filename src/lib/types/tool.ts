@@ -88,3 +88,94 @@ export interface TemplateExample {
     incentive: string;
   };
 }
+
+/**
+ * Lead capture configuration for specialized CTA component
+ */
+export interface LeadCaptureConfig {
+  emailRequired: boolean;
+  additionalFields?: {
+    name?: boolean;
+    phone?: boolean;
+    company?: boolean;
+    jobTitle?: boolean;
+    customFields?: Array<{
+      name: string;
+      type: 'text' | 'email' | 'phone' | 'select';
+      required: boolean;
+      options?: string[]; // For select type
+    }>;
+  };
+  doubleOptIn: {
+    enabled: boolean;
+    confirmationMessage?: string;
+    redirectUrl?: string;
+    emailTemplate?: string;
+  };
+  incentive: {
+    title: string;
+    description: string;
+    deliveryMethod: 'email' | 'download' | 'redirect';
+    deliveryTarget: string; // Email template ID, download URL, or redirect URL
+  };
+  trigger: 'before_results' | 'after_results' | 'manual';
+  styling?: {
+    variant: 'primary' | 'secondary' | 'success';
+    size: 'sm' | 'md' | 'lg';
+    customClasses?: string;
+  };
+}
+
+/**
+ * AI Agent Processing Types
+ */
+export interface PreprocessingResult {
+  selectedTemplate: string;
+  templateFitScore: number;
+  targetAudience: string;
+  modificationSignals: string[];
+}
+
+export interface SurgicalModification {
+  operation: 'modify' | 'add' | 'remove' | 'replace';
+  type: 'text' | 'calculation' | 'input' | 'function' | 'section' | 'styling';
+  target: string;
+  details: {
+    from?: string;
+    to?: string;
+    newElement?: any;
+    insertPosition?: 'before' | 'after' | 'inside';
+    removeTarget?: string;
+    replaceWith?: any;
+  };
+  reasoning: string;
+}
+
+export interface SurgicalPlan {
+  sourceTemplate: string;
+  modifications: SurgicalModification[];
+  dataRequirements: {
+    researchQueries: string[];
+    expectedDataTypes: string[];
+  };
+  templateEnhancements?: string[];
+}
+
+export interface ResearchData {
+  modificationData: Record<string, any>;
+  populatedModifications: SurgicalModification[];
+  clientInstructions: {
+    summary: string;
+    dataNeeded: string[];
+    format: string;
+  };
+}
+
+export interface CodeGenerationResult {
+  success: boolean;
+  customizedTool?: Tool;
+  generatedCode: string;
+  modificationsApplied: number;
+  validationErrors?: string[];
+  enhancementsAdded?: string[];
+}
