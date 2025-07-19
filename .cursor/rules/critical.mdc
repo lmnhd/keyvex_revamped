@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+**ALWAYS create a git checkpoint before significant changes
+**ALWAYS use strongly typed objects or Classes
+**NEVER use generic 'any' types EVER! - This is TYPESCRIPT!
+**NEVER create 'Fallback' solutions to avoid throwing erros!
+**ALWAYS deal with the core issue - not how to compensate with 'mock' scenarios!
+**NEVER write 'MOCK' implementations or code unless specifically asked to! - simply use 'Not-Implemented' when necessary.
+**ALWAYS take an AI FIRST approach! - avoid programattic solutions when AI can do it!
+**NEVER start/stop/manage the Next.js dev server
+**NEVER remove TODO comments
+**ALWAYS separate core business logic from Next.js API route handlers**  (i.e. api/<endpoint>/core-logic.ts)
+**ALWAYS use strongly typed objects or Classes
+**ALWAYS keep file lengths less than 500 lines - break into multiple files if necessary
+**ALWAYS use descriptive variable names
+Use Windows 11 & PowerShell only - no Unix commands
+Get user confirmation between multi-step tasks
+Keep LLM prompts separate from main logic
+Isolate AI-specific processing
+Include flexible metadata in DB schemas
+Create test pages in /tests/ directory
+Use Memory Bank tools to track progress and decisions
+Framework: Next.js 15
+Language: TypeScript
+Be mindful of client/server component differences
+Check working directory with pwd before operations
+
+Use descriptive commit messages: "checkpoint: before [change]"
