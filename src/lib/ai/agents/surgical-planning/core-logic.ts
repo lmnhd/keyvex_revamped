@@ -10,8 +10,12 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): SurgicalPlanningInput {
-  if (!input.preprocessingResult || !input.preprocessingResult.selectedTemplate) {
+function validateInput(input: unknown): SurgicalPlanningInput {
+  if (!input || typeof input !== 'object' || !('preprocessingResult' in input)) {
+    throw new Error('Invalid input: must be an object with preprocessingResult property');
+  }
+  const typedInput = input as { preprocessingResult: unknown };
+  if (!typedInput.preprocessingResult || typeof typedInput.preprocessingResult !== 'object' || !('selectedTemplate' in typedInput.preprocessingResult)) {
     throw new Error('Invalid input: preprocessingResult with selectedTemplate required');
   }
   return input as SurgicalPlanningInput;
@@ -46,7 +50,7 @@ function shouldFallback(result?: SurgicalPlan, error?: unknown): boolean {
 }
 
 export async function runSurgicalPlanningAgent(
-  rawInput: any,
+  rawInput: unknown,
 ): Promise<SurgicalPlan> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);

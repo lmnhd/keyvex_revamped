@@ -81,7 +81,7 @@ export interface TemplateExample {
   industry: string;
   componentCode: string;
   styling: StylingMetadata;
-  mockData: Record<string, any>;
+  mockData: TemplateData;
   leadCapture: {
     emailRequired: boolean;
     trigger: 'before_results' | 'after_results';
@@ -154,10 +154,10 @@ export interface SurgicalModification {
   details: {
     from?: string;
     to?: string;
-    newElement?: any;
+    newElement?: ComponentElement;
     insertPosition?: 'before' | 'after' | 'inside';
     removeTarget?: string;
-    replaceWith?: any;
+    replaceWith?: ComponentElement;
   };
   reasoning: string;
 }
@@ -173,7 +173,7 @@ export interface SurgicalPlan {
 }
 
 export interface ResearchData {
-  modificationData: Record<string, any>;
+  modificationData: ModificationData;
   populatedModifications: SurgicalModification[];
   clientInstructions: {
     summary: string;
@@ -209,4 +209,155 @@ export interface DataResearchInput {
 export interface CodeGenerationInput {
   surgicalPlan: SurgicalPlan;
   researchData: ResearchData;
+}
+
+// ============================================================================
+// REQUIRED TYPE DEFINITIONS TO ELIMINATE 'any' TYPES
+// ============================================================================
+
+/**
+ * Template Data Structures
+ */
+export interface TemplateData {
+  options: Record<string, string[]>;
+  defaults: Record<string, string | number>;
+  calculations: Record<string, number>;
+  metadata: Record<string, string>;
+}
+
+/**
+ * Component Element Types
+ */
+export interface ComponentElement {
+  type: string;
+  props: Record<string, unknown>;
+  children?: ComponentElement[];
+}
+
+/**
+ * Modification Data Types
+ */
+export interface ModificationData {
+  styleChanges: Record<string, string>;
+  contentChanges: Record<string, string>;
+  structureChanges: ComponentElement[];
+  dataUpdates: TemplateData;
+}
+
+/**
+ * Diagnostic Tool Types
+ */
+export interface DiagnosticTest {
+  id: string;
+  name: string;
+  status: 'pass' | 'fail' | 'warning';
+  score: number;
+  description: string;
+  recommendations: string[];
+}
+
+export interface DiagnosticResults {
+  overallScore: number;
+  tests: DiagnosticTest[];
+  categories: Record<string, DiagnosticTest[]>;
+  recommendations: string[];
+}
+
+/**
+ * Planner Tool Types
+ */
+export interface ChannelData {
+  name: string;
+  budget: number;
+  posts: number;
+  reach: number;
+  engagement: number;
+}
+
+export interface TimelineItem {
+  date: string;
+  task: string;
+  description: string;
+  assignedTo?: string;
+}
+
+export interface PlannerResults {
+  timeline: TimelineItem[];
+  channelBreakdown: ChannelData[];
+  totalBudget: number;
+  estimatedReach: number;
+}
+
+/**
+ * Form Tool Types
+ */
+export interface ProposalData {
+  title: string;
+  description: string;
+  sections: ProposalSection[];
+  pricing: PricingData;
+  timeline: string;
+}
+
+export interface ProposalSection {
+  title: string;
+  content: string;
+  deliverables: string[];
+}
+
+export interface PricingData {
+  amount: number;
+  currency: string;
+  breakdown: Array<{
+    item: string;
+    cost: number;
+  }>;
+}
+
+/**
+ * External API Types
+ */
+export interface PerplexityResponse {
+  answer: string;
+  citations: Citation[];
+  metadata: Record<string, unknown>;
+}
+
+export interface Citation {
+  url: string;
+  title: string;
+  snippet: string;
+}
+
+export interface WebSearchResult {
+  query: string;
+  results: Array<{
+    title: string;
+    snippet: string;
+    url: string;
+  }>;
+  summary: string;
+  timestamp: number;
+}
+
+export interface WebSearchOptions {
+  maxResults?: number;
+  focus?: 'recent' | 'comprehensive';
+}
+
+/**
+ * Babel Types
+ */
+export interface BabelTransformOptions {
+  presets?: string[];
+  plugins?: string[];
+  filename?: string;
+  sourceMaps?: boolean;
+}
+
+/**
+ * Component Props Types
+ */
+export interface ComponentProps<T = unknown> {
+  [key: string]: T;
 }

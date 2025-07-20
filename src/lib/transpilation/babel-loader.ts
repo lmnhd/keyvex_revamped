@@ -3,11 +3,13 @@
  * Loads Babel Standalone from CDN for JSX transpilation
  */
 
+import type { BabelTransformOptions } from '@/lib/types/tool';
+
 // Global Babel interface
 declare global {
   interface Window {
     Babel?: {
-      transform: (code: string, options: any) => { code: string };
+      transform: (code: string, options: BabelTransformOptions) => { code: string };
     };
   }
 }

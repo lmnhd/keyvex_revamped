@@ -3,21 +3,7 @@
  * Uses Perplexity API for real-world data research
  */
 
-interface WebSearchResult {
-  query: string;
-  results: Array<{
-    title: string;
-    snippet: string;
-    url: string;
-  }>;
-  summary: string;
-  timestamp: number;
-}
-
-interface WebSearchOptions {
-  maxResults?: number;
-  focus?: 'recent' | 'comprehensive';
-}
+import type { WebSearchResult, WebSearchOptions, PerplexityResponse } from '@/lib/types/tool';
 
 /**
  * Perform web search using Perplexity API
@@ -105,7 +91,7 @@ function generateMockSearchResult(query: string, maxResults: number): WebSearchR
 /**
  * Parse Perplexity API response
  */
-function parsePerplexityResponse(data: any, query: string): WebSearchResult {
+function parsePerplexityResponse(data: PerplexityResponse, query: string): WebSearchResult {
   // This would parse the actual Perplexity response
   // For now, return mock data
   return generateMockSearchResult(query, 5);

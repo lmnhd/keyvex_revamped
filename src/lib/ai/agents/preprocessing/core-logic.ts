@@ -10,8 +10,12 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): PreprocessingInput {
-  if (!input.userPrompt || input.userPrompt.length < 10) {
+function validateInput(input: unknown): PreprocessingInput {
+  if (!input || typeof input !== 'object' || !('userPrompt' in input)) {
+    throw new Error('Invalid input: must be an object with userPrompt property');
+  }
+  const typedInput = input as { userPrompt: unknown; businessType?: unknown; industry?: unknown };
+  if (!typedInput.userPrompt || typeof typedInput.userPrompt !== 'string' || typedInput.userPrompt.length < 10) {
     throw new Error('Invalid input: userPrompt required and must be at least 10 characters');
   }
   return input as PreprocessingInput;
@@ -37,7 +41,7 @@ function shouldFallback(result?: PreprocessingResult, error?: unknown): boolean 
 }
 
 export async function runPreprocessingAgent(
-  rawInput: any,
+  rawInput: unknown,
 ): Promise<PreprocessingResult> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);

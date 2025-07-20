@@ -10,8 +10,12 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): DataResearchInput {
-  if (!input.surgicalPlan || !input.surgicalPlan.sourceTemplate) {
+function validateInput(input: unknown): DataResearchInput {
+  if (!input || typeof input !== 'object' || !('surgicalPlan' in input)) {
+    throw new Error('Invalid input: must be an object with surgicalPlan property');
+  }
+  const typedInput = input as { surgicalPlan: unknown };
+  if (!typedInput.surgicalPlan || typeof typedInput.surgicalPlan !== 'object' || !('sourceTemplate' in typedInput.surgicalPlan)) {
     throw new Error('Invalid input: surgicalPlan with sourceTemplate required');
   }
   return input as DataResearchInput;
@@ -37,7 +41,7 @@ async function buildPrompt(input: DataResearchInput): Promise<string> {
     })
   );
   
-  const researchContext = searchResults.map((result: any) => 
+  const researchContext = searchResults.map((result: { query: string; answer: string }) => 
     `Query: ${result.query}\nAnswer: ${result.answer}`
   ).join('\n\n');
   
@@ -63,7 +67,7 @@ function shouldFallback(result?: ResearchData, error?: unknown): boolean {
 }
 
 export async function runDataResearchAgent(
-  rawInput: any,
+  rawInput: unknown,
 ): Promise<ResearchData> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);

@@ -10,8 +10,12 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): CodeGenerationInput {
-  if (!input.surgicalPlan || !input.researchData) {
+function validateInput(input: unknown): CodeGenerationInput {
+  if (!input || typeof input !== 'object') {
+    throw new Error('Invalid input: must be an object');
+  }
+  const typedInput = input as { surgicalPlan?: unknown; researchData?: unknown };
+  if (!typedInput.surgicalPlan || !typedInput.researchData) {
     throw new Error('Invalid input: surgicalPlan and researchData required');
   }
   return input as CodeGenerationInput;
@@ -55,7 +59,7 @@ function shouldFallback(result?: CodeGenerationResult, error?: unknown): boolean
 }
 
 export async function runCodeGenerationAgent(
-  rawInput: any,
+  rawInput: unknown,
 ): Promise<CodeGenerationResult> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);

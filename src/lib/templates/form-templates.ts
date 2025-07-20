@@ -1,6 +1,6 @@
 // @ts-nocheck - Template literals contain valid JSX code
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
-import type { TemplateExample } from '@/lib/types/tool';
+import type { TemplateExample, ProposalData } from '@/lib/types/tool';
 
 export const SERVICE_PROPOSAL_TEMPLATE: TemplateExample = {
   id: 'form-001',
@@ -27,7 +27,7 @@ export default function ServiceProposal() {
     timeline: '',
     requirements: ''
   });
-  const [proposal, setProposal] = useState<any>(null);
+  const [proposal, setProposal] = useState<ProposalData | null>(null);
 
   const serviceOptions = [
     { value: 'web-development', label: 'Web Development' },

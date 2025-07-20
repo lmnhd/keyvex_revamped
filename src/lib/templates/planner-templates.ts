@@ -1,6 +1,6 @@
 // @ts-nocheck - Template literals contain valid JSX code
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
-import type { TemplateExample } from '@/lib/types/tool';
+import type { TemplateExample, PlannerResults, ChannelData } from '@/lib/types/tool';
 
 export const MARKETING_PLANNER_TEMPLATE: TemplateExample = {
   id: 'planner-001',
@@ -22,7 +22,7 @@ export default function MarketingPlanner() {
   const [duration, setDuration] = useState(30);
   const [channels, setChannels] = useState<string[]>([]);
   const [targetAudience, setTargetAudience] = useState('');
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<PlannerResults | null>(null);
 
   const channelOptions = [
     { value: 'social', label: 'Social Media' },
@@ -187,7 +187,7 @@ export default function MarketingPlanner() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {results.channelBreakdown.map((channel: any, index: number) => (
+                    {results.channelBreakdown.map((channel: ChannelData, index: number) => (
                       <div key={index} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                           <h4 className="font-semibold">{channel.channel}</h4>

@@ -5,7 +5,7 @@
  */
 
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
-import type { TemplateExample } from '@/lib/types/tool';
+import type { TemplateExample, DiagnosticResults, DiagnosticTest } from '@/lib/types/tool';
 
 export const WEBSITE_DIAGNOSTIC_TEMPLATE: TemplateExample = {
   id: 'diagnostic-001',
@@ -26,7 +26,7 @@ export default function WebsiteDiagnostic() {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [auditType, setAuditType] = useState('');
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<DiagnosticResults | null>(null);
 
   const auditTypes = [
     { value: 'performance', label: 'Performance Audit' },
@@ -150,7 +150,7 @@ export default function WebsiteDiagnostic() {
   };
 
   const generateSummary = () => {
-    const passedTests = results?.tests.filter((test: any) => test.status === 'pass').length || 0;
+    const passedTests = results?.tests.filter((test: DiagnosticTest) => test.status === 'pass').length || 0;
     const totalTests = results?.tests.length || 0;
     
     return {
@@ -163,7 +163,7 @@ export default function WebsiteDiagnostic() {
   };
 
   const getTestsByCategory = () => {
-    const categories: Record<string, any[]> = {};
+    const categories: Record<string, DiagnosticTest[]> = {};
     testOptions.forEach(test => {
       if (!categories[test.category]) {
         categories[test.category] = [];
@@ -262,20 +262,20 @@ export default function WebsiteDiagnostic() {
                     <div className="text-center p-4 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">Passed</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {results.tests.filter((test: any) => test.status === 'pass').length}
+                        {results.tests.filter((test: DiagnosticTest) => test.status === 'pass').length}
                       </p>
                     </div>
                     <div className="text-center p-4 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">Failed</p>
                       <p className="text-2xl font-bold text-red-600">
-                        {results.tests.filter((test: any) => test.status === 'fail').length}
+                        {results.tests.filter((test: DiagnosticTest) => test.status === 'fail').length}
                       </p>
                     </div>
                   </div>
                   
                   <div className="space-y-4">
                     <h4 className="font-semibold">Test Results</h4>
-                    {results.tests.map((test: any, index: number) => (
+                    {results.tests.map((test: DiagnosticTest, index: number) => (
                       <div key={index} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-start mb-2">
                           <h5 className="font-medium">{test.name}</h5>

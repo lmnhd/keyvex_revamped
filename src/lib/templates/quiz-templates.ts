@@ -189,9 +189,26 @@ export default function HealthQuiz() {
     contrastValidated: true
   },
   mockData: {
-    sampleQuestions: 3,
-    sampleAnswers: ['regularly', 'good', 'often'],
-    expectedScore: 75
+    options: {
+      questionCount: ['3', '5', '7', '10'],
+      difficultyLevel: ['easy', 'medium', 'hard'],
+      resultTypes: ['score', 'level', 'detailed']
+    },
+    defaults: {
+      questionCount: 5,
+      difficultyLevel: 'medium',
+      resultType: 'level'
+    },
+    calculations: {
+      passingScore: 70,
+      timePerQuestion: 30,
+      totalTime: 150
+    },
+    metadata: {
+      category: 'healthcare',
+      version: '1.0',
+      lastUpdated: '2024-01-01'
+    }
   },
   leadCapture: { 
     emailRequired: true, 

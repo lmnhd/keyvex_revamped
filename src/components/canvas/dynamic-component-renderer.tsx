@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, ErrorInfo } from 'react';
 import { transformComponentCode, validateComponentSyntax } from '@/lib/transpilation/jsx-transpiler';
+import type { ComponentProps } from '@/lib/types/tool';
 
 // Import Shadcn/UI components for dependency injection
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,7 @@ class ComponentErrorBoundary extends React.Component<
   { children: React.ReactNode; onError: (error: string) => void },
   { hasError: boolean }
 > {
-  constructor(props: any) {
+  constructor(props: { children: React.ReactNode; onError: (error: string) => void }) {
     super(props);
     this.state = { hasError: false };
   }
