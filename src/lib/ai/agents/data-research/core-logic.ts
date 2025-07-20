@@ -10,11 +10,11 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: unknown): DataResearchInput {
+function validateInput(input: any): DataResearchInput {
   if (!input || typeof input !== 'object' || !('surgicalPlan' in input)) {
     throw new Error('Invalid input: must be an object with surgicalPlan property');
   }
-  const typedInput = input as { surgicalPlan: unknown };
+  const typedInput = input as { surgicalPlan: any };
   if (!typedInput.surgicalPlan || typeof typedInput.surgicalPlan !== 'object' || !('sourceTemplate' in typedInput.surgicalPlan)) {
     throw new Error('Invalid input: surgicalPlan with sourceTemplate required');
   }
@@ -67,7 +67,7 @@ function shouldFallback(result?: ResearchData, error?: unknown): boolean {
 }
 
 export async function runDataResearchAgent(
-  rawInput: unknown,
+  rawInput: any,
 ): Promise<ResearchData> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -83,7 +83,8 @@ export async function runDataResearchAgent(
       output: 'no-schema',
       ...DEFAULT_GENERATION_OPTS,
     });
-    primaryResult = object as unknown as ResearchData;
+    // Cast through 'any'
+    primaryResult = object as any as ResearchData;
   } catch (err) {
     primaryError = err;
   }
@@ -99,7 +100,7 @@ export async function runDataResearchAgent(
     output: 'no-schema',
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as unknown as ResearchData;
+  return object as any as ResearchData;
 }
 
 // Convenience exported default

@@ -10,11 +10,11 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: unknown): CodeGenerationInput {
+function validateInput(input: any): CodeGenerationInput {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid input: must be an object');
   }
-  const typedInput = input as { surgicalPlan?: unknown; researchData?: unknown };
+  const typedInput = input as { surgicalPlan?: any; researchData?: any };
   if (!typedInput.surgicalPlan || !typedInput.researchData) {
     throw new Error('Invalid input: surgicalPlan and researchData required');
   }
@@ -59,7 +59,7 @@ function shouldFallback(result?: CodeGenerationResult, error?: unknown): boolean
 }
 
 export async function runCodeGenerationAgent(
-  rawInput: unknown,
+  rawInput: any,
 ): Promise<CodeGenerationResult> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -75,7 +75,8 @@ export async function runCodeGenerationAgent(
       output: 'no-schema',
       ...DEFAULT_GENERATION_OPTS,
     });
-    primaryResult = object as unknown as CodeGenerationResult;
+    // Cast through 'any'
+    primaryResult = object as any as CodeGenerationResult;
   } catch (err) {
     primaryError = err;
   }
@@ -91,7 +92,7 @@ export async function runCodeGenerationAgent(
     output: 'no-schema',
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as unknown as CodeGenerationResult;
+  return object as any as CodeGenerationResult;
 }
 
 // Convenience exported default

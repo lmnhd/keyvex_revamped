@@ -10,11 +10,11 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: unknown): PreprocessingInput {
+function validateInput(input: any): PreprocessingInput {
   if (!input || typeof input !== 'object' || !('userPrompt' in input)) {
     throw new Error('Invalid input: must be an object with userPrompt property');
   }
-  const typedInput = input as { userPrompt: unknown; businessType?: unknown; industry?: unknown };
+  const typedInput = input as { userPrompt: any; businessType?: any; industry?: any };
   if (!typedInput.userPrompt || typeof typedInput.userPrompt !== 'string' || typedInput.userPrompt.length < 10) {
     throw new Error('Invalid input: userPrompt required and must be at least 10 characters');
   }
@@ -41,7 +41,7 @@ function shouldFallback(result?: PreprocessingResult, error?: unknown): boolean 
 }
 
 export async function runPreprocessingAgent(
-  rawInput: unknown,
+  rawInput: any,
 ): Promise<PreprocessingResult> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -57,7 +57,8 @@ export async function runPreprocessingAgent(
       output: 'no-schema',
       ...DEFAULT_GENERATION_OPTS,
     });
-    primaryResult = object as unknown as PreprocessingResult;
+    // Cast through 'any' to bypass strict incompatibility checks
+    primaryResult = object as any as PreprocessingResult;
   } catch (err) {
     primaryError = err;
   }
@@ -73,7 +74,7 @@ export async function runPreprocessingAgent(
     output: 'no-schema',
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as unknown as PreprocessingResult;
+  return object as any as PreprocessingResult;
 }
 
 // Convenience exported default

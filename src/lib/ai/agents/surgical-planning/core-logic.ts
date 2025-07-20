@@ -10,11 +10,11 @@ import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
 // Simple input validation instead of Zod schemas
-function validateInput(input: unknown): SurgicalPlanningInput {
+function validateInput(input: any): SurgicalPlanningInput {
   if (!input || typeof input !== 'object' || !('preprocessingResult' in input)) {
     throw new Error('Invalid input: must be an object with preprocessingResult property');
   }
-  const typedInput = input as { preprocessingResult: unknown };
+  const typedInput = input as { preprocessingResult: any };
   if (!typedInput.preprocessingResult || typeof typedInput.preprocessingResult !== 'object' || !('selectedTemplate' in typedInput.preprocessingResult)) {
     throw new Error('Invalid input: preprocessingResult with selectedTemplate required');
   }
@@ -50,7 +50,7 @@ function shouldFallback(result?: SurgicalPlan, error?: unknown): boolean {
 }
 
 export async function runSurgicalPlanningAgent(
-  rawInput: unknown,
+  rawInput: any,
 ): Promise<SurgicalPlan> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -66,7 +66,8 @@ export async function runSurgicalPlanningAgent(
       output: 'no-schema',
       ...DEFAULT_GENERATION_OPTS,
     });
-    primaryResult = object as unknown as SurgicalPlan;
+    // Cast through 'any' before final type
+    primaryResult = object as any as SurgicalPlan;
   } catch (err) {
     primaryError = err;
   }
@@ -82,7 +83,7 @@ export async function runSurgicalPlanningAgent(
     output: 'no-schema',
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as unknown as SurgicalPlan;
+  return object as any as SurgicalPlan;
 }
 
 // Convenience exported default
