@@ -1,153 +1,171 @@
-# Cursor Agent Context - Type Consolidation ONLY
+# Cursor Agent Context - Pragmatic Type Cleanup
 
 ## 🎯 TASK OBJECTIVE
 
-**CRITICAL TYPE VIOLATIONS FOUND - CLEAN UP TYPES ONLY**
+**REPLACE INEFFECTIVE 'UNKNOWN' TYPE THEATER WITH PRAGMATIC APPROACH**
 
-The codebase has violated the "no new types" rule and scattered type definitions across multiple schema files. You must consolidate types back to the single source of truth pattern.
+The current `unknown` type usage in AI agent validation functions is providing no practical benefits over `any` while making the code harder to work with. Replace with honest, pragmatic typing.
 
-**DO NOT TOUCH TEMPLATE FILES - The template file separation is correct and necessary to keep files under 500 lines.**
+## 🚨 CURRENT PROBLEMS IDENTIFIED
 
-## 🚨 CRITICAL TYPE VIOLATIONS TO FIX
+### Issues with Current Approach:
+1. **Type Theater**: Using `unknown` for external inputs then immediately casting to `any` behavior
+2. **No Development Benefits**: `unknown` provides zero type safety in validation functions  
+3. **Inconsistent Pattern**: 76% of generic type usage is unnecessary
+4. **Maintenance Overhead**: Complex validation logic for no practical gain
 
-### Type Violations Found:
-1. **Agents creating new types** in schema files instead of importing from `/lib/types/tool.ts`
-2. **Duplicated type definitions** across multiple schema files
-3. **Use of `z.any()` types** instead of proper TypeScript definitions
-4. **Schema files redefining** structures that already exist in main types file
+## 📋 PRAGMATIC TYPE FIXES REQUIRED
 
-## 📋 TYPE CONSOLIDATION REQUIREMENTS
+### 1. Replace 'unknown' Type Theater in AI Agent Functions
 
-### 1. DELETE These Files (Type Violations ONLY):
-```
-src/lib/ai/agents/preprocessing/schema.ts
-src/lib/ai/agents/surgical-planning/schema.ts  
-src/lib/ai/agents/data-research/schema.ts
-src/lib/ai/agents/code-generation/schema.ts
-```
-
-### 2. UPDATE Agent types.ts Files
-Each agent's `types.ts` file should ONLY re-export from main types:
-
-**`/src/lib/ai/agents/preprocessing/types.ts`**:
+**Current Pattern (16 instances across 4 agents)**:
 ```typescript
-// Re-export shared types - NO new type creation allowed
-export type { 
-  PreprocessingResult,
-  ToolRequest as PreprocessingInput 
-} from '@/lib/types/tool';
-```
-
-**`/src/lib/ai/agents/surgical-planning/types.ts`**:
-```typescript
-// Re-export shared types - NO new type creation allowed  
-export type { 
-  SurgicalPlan,
-  PreprocessingResult
-} from '@/lib/types/tool';
-
-export interface SurgicalPlanningInput {
-  preprocessingResult: PreprocessingResult;
+// CURRENT - Type theater that helps nobody
+function validateInput(input: unknown): PreprocessingInput {
+  const typedInput = input as { userPrompt: unknown; businessType?: unknown };
+  // ... validation
+  return input as PreprocessingInput;
 }
+
+export async function runPreprocessingAgent(rawInput: unknown): Promise<PreprocessingResult>
 ```
 
-**`/src/lib/ai/agents/data-research/types.ts`**:
+**NEW Pattern - Honest External Input Handling**:
 ```typescript
-// Re-export shared types - NO new type creation allowed
-export type { 
-  ResearchData,
-  SurgicalPlan 
-} from '@/lib/types/tool';
-
-export interface DataResearchInput {
-  surgicalPlan: SurgicalPlan;
-}
-```
-
-**`/src/lib/ai/agents/code-generation/types.ts`**:
-```typescript
-// Re-export shared types - NO new type creation allowed
-export type { 
-  CodeGenerationResult,
-  SurgicalPlan,
-  ResearchData 
-} from '@/lib/types/tool';
-
-export interface CodeGenerationInput {
-  surgicalPlan: SurgicalPlan;
-  researchData: ResearchData;
-}
-```
-
-### 3. UPDATE Agent core-logic.ts Files
-Remove schema imports and use direct validation:
-
-**Pattern for all agents**:
-```typescript
-// REMOVE: import from './schema'
-// REPLACE WITH: Direct type imports
-import type { PreprocessingResult, SurgicalPlan } from '@/lib/types/tool';
-
-// REMOVE: Zod schema validation  
-// REPLACE WITH: Simple input validation
-function validateInput(input: any): PreprocessingResult {
-  if (!input.userPrompt || input.userPrompt.length < 10) {
-    throw new Error('Invalid input: userPrompt required and must be at least 10 characters');
+// NEW - Honest about external inputs
+function validateInput(input: any): PreprocessingInput {
+  if (!input || typeof input !== 'object' || !input.userPrompt) {
+    throw new Error('Invalid input: userPrompt required');
   }
-  return input as PreprocessingResult;
+  if (typeof input.userPrompt !== 'string' || input.userPrompt.length < 10) {
+    throw new Error('userPrompt must be at least 10 characters');
+  }
+  return input as PreprocessingInput;
 }
 
-export async function runPreprocessingAgent(rawInput: any): Promise<PreprocessingResult> {
-  // Simple validation instead of Zod schemas
-  const input = validateInput(rawInput);
-  
-  // Rest of function unchanged...
-}
+export async function runPreprocessingAgent(rawInput: any): Promise<PreprocessingResult>
 ```
 
-### 4. ADD Missing Types to `/lib/types/tool.ts`
-Add any missing input interfaces directly to the main types file:
+### 2. Update All 4 Agent Core-Logic Files
 
+**Files to Update**:
+- `/src/lib/ai/agents/preprocessing/core-logic.ts`
+- `/src/lib/ai/agents/surgical-planning/core-logic.ts`  
+- `/src/lib/ai/agents/data-research/core-logic.ts`
+- `/src/lib/ai/agents/code-generation/core-logic.ts`
+
+**Changes for Each File**:
+1. Replace `rawInput: unknown` → `rawInput: any`
+2. Replace `function validateInput(input: unknown)` → `function validateInput(input: any)`
+3. Replace `const typedInput = input as { prop: unknown }` → direct property access
+4. Keep `error?: unknown` (appropriate for error handling)
+5. Simplify validation logic without nested type assertions
+
+### 3. Keep Appropriate Generic Types (5 instances)
+
+**These are correctly using generics and should NOT be changed**:
 ```typescript
-// Add these interfaces to /lib/types/tool.ts if they don't exist
-export interface SurgicalPlanningInput {
-  preprocessingResult: PreprocessingResult;
-}
+// Component props - genuinely can be any React prop type
+props: Record<string, unknown>;
 
-export interface DataResearchInput {
-  surgicalPlan: SurgicalPlan;
-}
+// External API metadata - unpredictable structure  
+metadata: Record<string, unknown>;
 
-export interface CodeGenerationInput {
-  surgicalPlan: SurgicalPlan;
-  researchData: ResearchData;
-}
+// Error handling - errors can be anything in JavaScript
+error?: unknown
 ```
 
-## ⚠️ CRITICAL RULES TO FOLLOW
+## 📝 SPECIFIC REPLACEMENTS NEEDED
 
-1. **SINGLE SOURCE OF TRUTH**: All types MUST be in `/lib/types/tool.ts` only
-2. **NO NEW TYPE CREATION**: Agents can only import and re-export existing types
-3. **NO ZOD SCHEMAS**: Remove all Zod validation, use simple input checking
-4. **NO `z.any()` USAGE**: All types must be properly defined TypeScript interfaces
-5. **AGENT TYPES FILES**: Should only re-export from main types, no definitions
-6. **DO NOT TOUCH TEMPLATE FILES**: The template file separation is correct and necessary
+### Agent Validation Functions (4 files)
 
-## 🔧 IMPLEMENTATION ORDER
+**preprocessing/core-logic.ts**:
+```typescript
+// REPLACE:
+function validateInput(input: unknown): PreprocessingInput {
+  const typedInput = input as { userPrompt: unknown; businessType?: unknown; industry?: unknown };
+  if (!typedInput.userPrompt || typeof typedInput.userPrompt !== 'string') {
 
-1. **Delete all schema files** that violate type rules
-2. **Update agent types.ts files** to only re-export from main types
-3. **Update agent core-logic.ts files** to remove Zod dependencies
-4. **Add missing interfaces** to `/lib/types/tool.ts` if needed
-5. **Verify all imports** point to single source of truth
+// WITH:
+function validateInput(input: any): PreprocessingInput {
+  if (!input || !input.userPrompt || typeof input.userPrompt !== 'string') {
+```
+
+**surgical-planning/core-logic.ts**:
+```typescript
+// REPLACE:
+function validateInput(input: unknown): SurgicalPlanningInput {
+  const typedInput = input as { preprocessingResult: unknown };
+  if (!typedInput.preprocessingResult || typeof typedInput.preprocessingResult !== 'object') {
+
+// WITH:
+function validateInput(input: any): SurgicalPlanningInput {
+  if (!input || !input.preprocessingResult || typeof input.preprocessingResult !== 'object') {
+```
+
+**data-research/core-logic.ts**:
+```typescript
+// REPLACE:
+function validateInput(input: unknown): DataResearchInput {
+  const typedInput = input as { surgicalPlan: unknown };
+  if (!typedInput.surgicalPlan || typeof typedInput.surgicalPlan !== 'object') {
+
+// WITH:
+function validateInput(input: any): DataResearchInput {
+  if (!input || !input.surgicalPlan || typeof input.surgicalPlan !== 'object') {
+```
+
+**code-generation/core-logic.ts**:
+```typescript
+// REPLACE:
+function validateInput(input: unknown): CodeGenerationInput {
+  const typedInput = input as { surgicalPlan?: unknown; researchData?: unknown };
+  if (!typedInput.surgicalPlan || !typedInput.researchData) {
+
+// WITH:
+function validateInput(input: any): CodeGenerationInput {
+  if (!input || !input.surgicalPlan || !input.researchData) {
+```
+
+### Function Signatures (4 files)
+
+**Replace in all agent files**:
+```typescript
+// REPLACE:
+export async function runAgent(rawInput: unknown): Promise<Result>
+
+// WITH:
+export async function runAgent(rawInput: any): Promise<Result>
+```
+
+## ⚠️ CRITICAL RULES
+
+1. **Only change AI agent validation functions** - external input handling where `any` is honest
+2. **Keep error handling as `unknown`** - errors genuinely can be anything  
+3. **Keep component props as `unknown`** - React props genuinely need flexibility
+4. **Keep external API metadata as `unknown`** - unpredictable structures
+5. **Simplify validation logic** - remove unnecessary nested type assertions
+6. **Do not change template files** - they are correctly structured
+
+## 🎯 RATIONALE
+
+**Why `any` is better than `unknown` for external inputs**:
+- **Honest**: We're accepting JSON from API calls, we don't know the shape
+- **Practical**: No false sense of type safety during development  
+- **Simpler**: Less complex validation logic
+- **Maintainable**: Clear intent about what we're doing
+
+**The 5 remaining generic types are appropriate because**:
+- Component props genuinely can be any React prop value
+- Error objects genuinely can be any type in JavaScript  
+- External API metadata genuinely has unpredictable structure
 
 ## ✅ SUCCESS CRITERIA
 
-1. **Zero schema files** in agent directories
-2. **All types consolidated** in `/lib/types/tool.ts` only
-3. **No `z.any()` usage** anywhere in codebase
-4. **Agent files** only import from main types file
-5. **No type duplication** across multiple files
-6. **Template files unchanged** - they are correctly separated for file size management
+1. **AI agent functions use `any` for external inputs** (honest about unknown shape)
+2. **Simplified validation logic** without nested type assertions
+3. **Keep 5 appropriate generic types unchanged** (props, metadata, errors)
+4. **No type theater** - every generic type serves a real purpose
+5. **Build and lint pass** with clean, maintainable code
 
-**This is a critical cleanup task focusing ONLY on type consolidation - do not modify template files.**
+**Focus: Replace type theater with pragmatic honesty for external input handling.**
