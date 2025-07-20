@@ -6,6 +6,15 @@ alwaysApply: true
 **ALWAYS create a git checkpoint before significant changes
 **ALWAYS use strongly typed objects or Classes
 **NEVER use generic 'any' types EVER! - This is TYPESCRIPT!
+**NEVER CREATE NEW TYPESCRIPT TYPES OR INTERFACES - ONLY CLAUDE (MASTER AGENT) CREATES TYPES
+**SINGLE SOURCE OF TRUTH: ALL TYPES MUST BE IN /lib/types/tool.ts ONLY
+**NEVER CREATE TYPE/INTERFACE DEFINITIONS IN: schema.ts, types.ts, or any other files
+**ALWAYS IMPORT AND USE EXISTING TYPES FROM @/lib/types/tool.ts EXCLUSIVELY
+**NEVER CREATE ZOD SCHEMAS - USE SIMPLE TYPESCRIPT VALIDATION INSTEAD
+**NEVER USE z.any() OR TypeScript 'any' TYPES - ALL TYPES MUST BE PROPERLY DEFINED
+**AGENTS CAN ONLY RE-EXPORT TYPES FROM /lib/types/tool.ts - NO NEW DEFINITIONS
+**CONSOLIDATE: Keep all related functionality in single files (templates, types, etc.)
+**NO TYPE SCATTERING: Multiple files defining the same types is strictly forbidden
 **NEVER create 'Fallback' solutions to avoid throwing erros!
 **ALWAYS deal with the core issue - not how to compensate with 'mock' scenarios!
 **NEVER write 'MOCK' implementations or code unless specifically asked to! - simply use 'Not-Implemented' when necessary.

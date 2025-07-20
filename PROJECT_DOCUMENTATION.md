@@ -91,11 +91,13 @@ Both objectives must be seamlessly integrated into the user experience, with lea
 
 ## Technical Architecture
 
-### Core Components (Borrowed from Current Project)
-1. **Canvas Tool** (`canvas-tool.tsx`) - Main tool renderer
-2. **Dynamic Component Renderer** (`dynamic-component-renderer.tsx`) - JSX execution engine
-3. **Product Tool Types** (`product-tool.ts`) - Type definitions
-4. **JSX Transpiler** (`jsx-transpiler.ts`) - JSX to JavaScript conversion
+### Core Components (Clean Architecture)
+1. **Tool Renderer** (`/src/components/canvas/tool-renderer.tsx`) - Main tool display component
+2. **Dynamic Component Renderer** (`/src/components/canvas/dynamic-component-renderer.tsx`) - JSX execution engine
+3. **Tool Types** (`/src/lib/types/tool.ts`) - SINGLE SOURCE OF TRUTH for all type definitions
+4. **AI Agents** (`/src/lib/ai/agents/`) - 4-agent surgical modification pipeline (no schema files)
+5. **Baseline Templates** (`/src/lib/templates/`) - 5 tool types in separate files (under 500 lines each)
+6. **Surgical Pipeline API** (`/src/app/api/ai/surgical-pipeline/start/route.ts`) - Complete orchestration endpoint
 
 ### Refactoring Strategy
 - **Remove**: Extensive console logging, complex validation
@@ -103,15 +105,14 @@ Both objectives must be seamlessly integrated into the user experience, with lea
 - **Streamline**: Transpilation process, validation logic
 - **Focus**: Essential functionality only
 
-### Process Flow
-1. **Business Input** - User describes business model including lead goals and insight needs
-2. **Tool Type Matching** - AI recommends appropriate tool type with built-in lead capture
-3. **Template Selection** - Choose baseline template with dual objectives
-4. **Brainstorm Generation** - Plan specific customizations including lead capture strategy
-5. **Data Requirements Research** - AI researches and generates realistic mock data
-6. **Surgical Modifications** - Surgeon agent makes targeted changes including lead capture UX
-7. **Real-Time Preview** - Canvas tool renders live updates with lead flow testing
-8. **Final Product** - Dual-purpose tool ready for deployment
+### AI-First Surgical Pipeline (4 Agents)
+1. **Business Input** - User describes business needs via `/test` page textarea
+2. **Enhanced Preprocessing Agent** - Maps user intent to template + modification signals  
+3. **Template-Aware Surgical Planning Agent** - Creates detailed modification plans
+4. **Template-Focused Data Research Agent** - Researches real data using Perplexity API
+5. **All-AI Code Generation Agent** - Generates complete modified React components
+6. **Real-Time Preview** - Tool renderer displays generated tools with lead capture
+7. **Final Product** - Working dual-purpose tool with real data and lead collection
 
 ## Key Implementation Decisions
 

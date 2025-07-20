@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+**ONLY CLAUDE (MASTER AGENT) CREATES TYPESCRIPT TYPES**
+**NEVER create interfaces, types, enums, or class definitions**
+**ALWAYS import existing types from @/lib/types/**
+**Request new types: // TODO: MASTER AGENT - Need type for: [description]**

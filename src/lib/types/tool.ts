@@ -130,10 +130,21 @@ export interface LeadCaptureConfig {
  * AI Agent Processing Types
  */
 export interface PreprocessingResult {
-  selectedTemplate: string;
+  selectedTemplate: ToolType;
   templateFitScore: number;
   targetAudience: string;
   modificationSignals: string[];
+  businessAnalysis: {
+    industry: string;
+    services: string[];
+    valueProposition: string;
+    leadGoals: string[];
+  };
+  recommendedLeadCapture: {
+    trigger: 'before_results' | 'after_results';
+    incentive: string;
+    additionalFields: string[];
+  };
 }
 
 export interface SurgicalModification {
@@ -178,4 +189,24 @@ export interface CodeGenerationResult {
   modificationsApplied: number;
   validationErrors?: string[];
   enhancementsAdded?: string[];
+}
+
+// ============================================================================
+// AGENT INPUT INTERFACES
+// ============================================================================
+
+/**
+ * Input interfaces for AI agents - consolidated in main types file
+ */
+export interface SurgicalPlanningInput {
+  preprocessingResult: PreprocessingResult;
+}
+
+export interface DataResearchInput {
+  surgicalPlan: SurgicalPlan;
+}
+
+export interface CodeGenerationInput {
+  surgicalPlan: SurgicalPlan;
+  researchData: ResearchData;
 }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Textarea } from '@/components/ui/textarea';
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 
 /**
@@ -15,6 +16,11 @@ import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 export default function TestPage() {
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Surgical Pipeline State
+  const [businessDescription, setBusinessDescription] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processError, setProcessError] = useState<string | null>(null);
   
   // Sample tools for testing with theme-aware styling
   const sampleTools: Tool[] = [
@@ -182,6 +188,45 @@ function NeighborhoodQuiz() {
     }, 500);
   };
   
+  // Surgical Pipeline Process
+  const runSurgicalPipeline = async () => {
+    if (!businessDescription.trim()) {
+      setProcessError('Please enter a business description');
+      return;
+    }
+    
+    setIsProcessing(true);
+    setProcessError(null);
+    
+    try {
+      const response = await fetch('/api/ai/surgical-pipeline/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userPrompt: businessDescription.trim() })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      // Set the generated tool as selected
+      if (result.tool) {
+        setSelectedTool(result.tool);
+        setBusinessDescription(''); // Clear input
+      } else {
+        setProcessError('No tool was generated from the pipeline');
+      }
+      
+    } catch (error) {
+      console.error('Surgical pipeline error:', error);
+      setProcessError(error instanceof Error ? error.message : 'Unknown error occurred');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
   return (
     <div className="relative min-h-screen bg-background text-foreground p-6">
       <div className="absolute top-4 right-4">
@@ -190,15 +235,182 @@ function NeighborhoodQuiz() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Tool Testing Lab</h1>
-          <p className="text-muted-foreground">Test and visualize tool templates</p>
+          <p className="text-muted-foreground">Test templates and surgical pipeline</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Tool Selection Panel */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Surgical Pipeline */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Available Tools</CardTitle>
+                <CardTitle className="text-lg">🔬 Create New Tool</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Describe your business and tool needs:
+                  </label>
+                  <Textarea
+                    value={businessDescription}
+                    onChange={(e) => setBusinessDescription(e.target.value)}
+                    placeholder="I'm a financial advisor who wants to help clients calculate retirement savings needed based on their age, income, and goals..."
+                    className="min-h-[100px]"
+                    disabled={isProcessing}
+                  />
+                </div>
+
+                {/* Advanced Test Cases */}
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-foreground">Quick Test Cases:</div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {/* Calculator Tests */}
+                    <div className="border-l-2 border-blue-500 pl-3">
+                      <div className="text-xs font-medium text-blue-600 mb-1">CALCULATOR</div>
+                      <div className="space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I run a wedding photography business and need to help couples calculate their total wedding photography investment including engagement shoots, day-of coverage, albums, and travel fees based on their specific package choices and venue location")}
+                          disabled={isProcessing}
+                        >
+                          Wedding Photography ROI Calculator
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I'm a solar panel installer who needs to calculate exact ROI for homeowners considering their roof orientation, local utility rates, financing options, and state/federal tax incentives")}
+                          disabled={isProcessing}
+                        >
+                          Solar Panel ROI with Tax Incentives
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Quiz Tests */}
+                    <div className="border-l-2 border-green-500 pl-3">
+                      <div className="text-xs font-medium text-green-600 mb-1">QUIZ/ASSESSMENT</div>
+                      <div className="space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I'm a cybersecurity consultant who needs to assess small businesses' security readiness across 8 different threat vectors and provide risk scores with specific remediation priorities")}
+                          disabled={isProcessing}
+                        >
+                          Cybersecurity Threat Assessment
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I offer franchise consulting and need to evaluate potential franchisees' readiness across financial capacity, industry experience, location factors, and personality fit for specific franchise brands")}
+                          disabled={isProcessing}
+                        >
+                          Franchise Readiness Evaluation
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Planner Tests */}
+                    <div className="border-l-2 border-purple-500 pl-3">
+                      <div className="text-xs font-medium text-purple-600 mb-1">PLANNER</div>
+                      <div className="space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I'm a wedding planner who needs to create detailed 18-month planning timelines for couples, accounting for venue booking deadlines, vendor selection phases, dress fittings, and final month countdown tasks")}
+                          disabled={isProcessing}
+                        >
+                          Wedding Planning 18-Month Timeline
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I run a content marketing agency and need to plan 90-day content calendars for B2B SaaS clients across multiple channels with campaign themes, product launches, and seasonal considerations")}
+                          disabled={isProcessing}
+                        >
+                          Content Marketing 90-Day Calendar
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Form Tests */}
+                    <div className="border-l-2 border-orange-500 pl-3">
+                      <div className="text-xs font-medium text-orange-600 mb-1">FORM/GENERATOR</div>
+                      <div className="space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I'm a business attorney who generates custom operating agreements for LLCs with different member structures, profit distributions, management styles, and exit strategies across various industries")}
+                          disabled={isProcessing}
+                        >
+                          LLC Operating Agreement Generator
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I create custom employee handbooks for growing companies that need policies covering remote work, PTO, performance reviews, and compliance requirements specific to their industry and state")}
+                          disabled={isProcessing}
+                        >
+                          Employee Handbook Generator
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Diagnostic Tests */}
+                    <div className="border-l-2 border-red-500 pl-3">
+                      <div className="text-xs font-medium text-red-600 mb-1">DIAGNOSTIC</div>
+                      <div className="space-y-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I audit e-commerce stores' conversion optimization across product pages, checkout flow, mobile experience, and abandoned cart recovery with specific improvement recommendations and priority rankings")}
+                          disabled={isProcessing}
+                        >
+                          E-commerce Conversion Audit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs text-left justify-start h-auto py-2 px-3"
+                          onClick={() => setBusinessDescription("I evaluate manufacturing companies' operational efficiency by analyzing production workflows, inventory management, quality control, and supply chain vulnerabilities")}
+                          disabled={isProcessing}
+                        >
+                          Manufacturing Efficiency Analysis
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={runSurgicalPipeline}
+                  disabled={isProcessing || !businessDescription.trim()}
+                  className="w-full"
+                >
+                  {isProcessing ? 'Processing...' : 'Generate Tool'}
+                </Button>
+                
+                {processError && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
+                    {processError}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Sample Tools */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">📋 Sample Templates</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {sampleTools.map(tool => (

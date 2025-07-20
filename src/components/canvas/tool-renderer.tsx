@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import DynamicComponentRenderer from '@/lib/components/dynamic-component-renderer';
+import DynamicComponentRenderer from './dynamic-component-renderer';
 
 /**
  * Simple tool renderer - no complex validation, just render and test
