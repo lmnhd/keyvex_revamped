@@ -1,10 +1,12 @@
-# Cursor Agent Context - Pragmatic Type Cleanup
+# Cursor Agent Context - REPLACE UNKNOWN WITH ANY
 
 ## 🎯 TASK OBJECTIVE
 
-**REPLACE INEFFECTIVE 'UNKNOWN' TYPE THEATER WITH PRAGMATIC APPROACH**
+**CRITICAL: REPLACE 'UNKNOWN' WITH 'ANY' IN EXTERNAL INPUT FUNCTIONS**
 
-The current `unknown` type usage in AI agent validation functions is providing no practical benefits over `any` while making the code harder to work with. Replace with honest, pragmatic typing.
+**THE CURRENT CODE IS WRONG** - We are currently using `unknown` in AI agent validation functions but this is "type theater" that provides zero benefits. We need to REPLACE `unknown` with `any` for honest external input handling.
+
+**IMPORTANT: `unknown` is the PROBLEM, `any` is the SOLUTION for external inputs.**
 
 ## 🚨 CURRENT PROBLEMS IDENTIFIED
 
@@ -14,52 +16,68 @@ The current `unknown` type usage in AI agent validation functions is providing n
 3. **Inconsistent Pattern**: 76% of generic type usage is unnecessary
 4. **Maintenance Overhead**: Complex validation logic for no practical gain
 
-## 📋 PRAGMATIC TYPE FIXES REQUIRED
+## 📋 REQUIRED CHANGES: UNKNOWN → ANY
 
-### 1. Replace 'unknown' Type Theater in AI Agent Functions
+### 1. FIND AND REPLACE ALL 'unknown' in AI Agent Validation
 
-**Current Pattern (16 instances across 4 agents)**:
+**YOU MUST SEARCH FOR AND REPLACE THE FOLLOWING PATTERN**:
+
+**SEARCH FOR THIS (WRONG - CURRENTLY IN THE CODE)**:
 ```typescript
-// CURRENT - Type theater that helps nobody
 function validateInput(input: unknown): PreprocessingInput {
   const typedInput = input as { userPrompt: unknown; businessType?: unknown };
-  // ... validation
-  return input as PreprocessingInput;
-}
+```
 
+**REPLACE WITH THIS (CORRECT)**:
+```typescript
+function validateInput(input: any): PreprocessingInput {
+  if (!input || !input.userPrompt || typeof input.userPrompt !== 'string') {
+```
+
+**SEARCH FOR THIS (WRONG - CURRENTLY IN THE CODE)**:
+```typescript
 export async function runPreprocessingAgent(rawInput: unknown): Promise<PreprocessingResult>
 ```
 
-**NEW Pattern - Honest External Input Handling**:
+**REPLACE WITH THIS (CORRECT)**:
 ```typescript
-// NEW - Honest about external inputs
-function validateInput(input: any): PreprocessingInput {
-  if (!input || typeof input !== 'object' || !input.userPrompt) {
-    throw new Error('Invalid input: userPrompt required');
-  }
-  if (typeof input.userPrompt !== 'string' || input.userPrompt.length < 10) {
-    throw new Error('userPrompt must be at least 10 characters');
-  }
-  return input as PreprocessingInput;
-}
-
 export async function runPreprocessingAgent(rawInput: any): Promise<PreprocessingResult>
 ```
 
-### 2. Update All 4 Agent Core-Logic Files
+### 2. EXACT FILES TO CHANGE (ALL CURRENTLY USE 'unknown' - WRONG!)
 
-**Files to Update**:
+**STEP 1: Open these 4 files and look for 'unknown' types**:
 - `/src/lib/ai/agents/preprocessing/core-logic.ts`
 - `/src/lib/ai/agents/surgical-planning/core-logic.ts`  
 - `/src/lib/ai/agents/data-research/core-logic.ts`
 - `/src/lib/ai/agents/code-generation/core-logic.ts`
 
-**Changes for Each File**:
-1. Replace `rawInput: unknown` → `rawInput: any`
-2. Replace `function validateInput(input: unknown)` → `function validateInput(input: any)`
-3. Replace `const typedInput = input as { prop: unknown }` → direct property access
-4. Keep `error?: unknown` (appropriate for error handling)
-5. Simplify validation logic without nested type assertions
+**STEP 2: In each file, find lines like this (CURRENT - WRONG)**:
+```typescript
+function validateInput(input: unknown): PreprocessingInput {
+  const typedInput = input as { userPrompt: unknown; businessType?: unknown; industry?: unknown };
+  if (!typedInput.userPrompt || typeof typedInput.userPrompt !== 'string') {
+```
+
+**STEP 3: Replace with (CORRECT)**:
+```typescript
+function validateInput(input: any): PreprocessingInput {
+  if (!input || !input.userPrompt || typeof input.userPrompt !== 'string') {
+```
+
+**STEP 4: Find function signatures like (CURRENT - WRONG)**:
+```typescript
+export async function runPreprocessingAgent(rawInput: unknown): Promise<PreprocessingResult>
+```
+
+**STEP 5: Replace with (CORRECT)**:
+```typescript
+export async function runPreprocessingAgent(rawInput: any): Promise<PreprocessingResult>
+```
+
+**DO NOT TOUCH**:
+- `error?: unknown` (keep this)
+- Template files (they are correct)
 
 ### 3. Keep Appropriate Generic Types (5 instances)
 
@@ -162,10 +180,33 @@ export async function runAgent(rawInput: any): Promise<Result>
 
 ## ✅ SUCCESS CRITERIA
 
+**TO VERIFY YOUR CHANGES WORKED, RUN THIS COMMAND**:
+```bash
+rg ": unknown" src/lib/ai/agents/ -n
+```
+
+**AFTER YOUR CHANGES, THIS SHOULD ONLY SHOW**:
+- `error?: unknown` (these are correct, keep them)
+- NO `input: unknown` or `rawInput: unknown` (these should now be `any`)
+
+**BEFORE YOUR CHANGES (WRONG STATE)**:
+```bash
+# Should show many lines like:
+function validateInput(input: unknown): PreprocessingInput
+rawInput: unknown,
+const typedInput = input as { userPrompt: unknown }
+```
+
+**AFTER YOUR CHANGES (CORRECT STATE)**:
+```bash
+# Should only show error handling:
+error?: unknown
+```
+
 1. **AI agent functions use `any` for external inputs** (honest about unknown shape)
-2. **Simplified validation logic** without nested type assertions
+2. **Simplified validation logic** without nested type assertions  
 3. **Keep 5 appropriate generic types unchanged** (props, metadata, errors)
 4. **No type theater** - every generic type serves a real purpose
 5. **Build and lint pass** with clean, maintainable code
 
-**Focus: Replace type theater with pragmatic honesty for external input handling.**
+**SUMMARY: Change `unknown` to `any` for external input validation, keep `unknown` for error handling.**
