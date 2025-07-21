@@ -5,20 +5,54 @@
  */
 
 import { generateObject } from 'ai';
-import type { DataResearchInput, ResearchData } from '@/lib/types/tool';
+import { z } from 'zod';
+import type { DataResearchInput, ResearchData, ComponentElement } from '@/lib/types/tool';
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
+// Zod schema enforcing exact ResearchData structure
+const ComponentElementSchema: z.ZodType<ComponentElement> = z.lazy(() =>
+  z.object({
+    type: z.string(),
+    props: z.record(z.unknown()),
+    children: z.array(ComponentElementSchema).optional()
+  })
+);
+
+const SurgicalModificationSchema = z.object({
+  operation: z.enum(['modify', 'add', 'remove', 'replace']),
+  type: z.enum(['text', 'calculation', 'input', 'function', 'section', 'styling']),
+  target: z.string(),
+  details: z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+    newElement: ComponentElementSchema.optional(),
+    insertPosition: z.enum(['before', 'after', 'inside']).optional(),
+    removeTarget: z.string().optional(),
+    replaceWith: ComponentElementSchema.optional()
+  }),
+  reasoning: z.string()
+});
+
+const ResearchDataSchema = z.object({
+  modificationData: z.record(z.unknown()).optional().default({}), // complex object; validate elsewhere
+  populatedModifications: z.array(SurgicalModificationSchema).optional().default([]),
+  clientInstructions: z.object({
+    summary: z.string(),
+    dataNeeded: z.array(z.string()),
+    format: z.string()
+  })
+});
+
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): DataResearchInput {
+function validateInput(input: DataResearchInput): DataResearchInput {
   if (!input || typeof input !== 'object' || !('surgicalPlan' in input)) {
     throw new Error('Invalid input: must be an object with surgicalPlan property');
   }
-  const typedInput = input as { surgicalPlan: any };
-  if (!typedInput.surgicalPlan || typeof typedInput.surgicalPlan !== 'object' || !('sourceTemplate' in typedInput.surgicalPlan)) {
+  if (!input.surgicalPlan || typeof input.surgicalPlan !== 'object' || !('sourceTemplate' in input.surgicalPlan)) {
     throw new Error('Invalid input: surgicalPlan with sourceTemplate required');
   }
-  return input as DataResearchInput;
+  return input;
 }
 
 // Mock web search function for now
@@ -67,7 +101,7 @@ function shouldFallback(result?: ResearchData, error?: unknown): boolean {
 }
 
 export async function runDataResearchAgent(
-  rawInput: any,
+  rawInput: DataResearchInput,
 ): Promise<ResearchData> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -80,11 +114,11 @@ export async function runDataResearchAgent(
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
       prompt: systemPrompt,
-      output: 'no-schema',
+      schema: ResearchDataSchema,
       ...DEFAULT_GENERATION_OPTS,
     });
     // Cast through 'any'
-    primaryResult = object as any as ResearchData;
+    primaryResult = object as unknown as ResearchData;
   } catch (err) {
     primaryError = err;
   }
@@ -97,10 +131,10 @@ export async function runDataResearchAgent(
   const { object } = await generateObject({
     model: MODELS.FALLBACK,
     prompt: systemPrompt,
-    output: 'no-schema',
+    schema: ResearchDataSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as any as ResearchData;
+  return object as unknown as ResearchData;
 }
 
 // Convenience exported default

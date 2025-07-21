@@ -5,20 +5,54 @@
  */
 
 import { generateObject } from 'ai';
-import type { SurgicalPlanningInput, SurgicalPlan } from '@/lib/types/tool';
+import { z } from 'zod';
+import type { SurgicalPlanningInput, SurgicalPlan, ComponentElement } from '@/lib/types/tool';
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
+// Recursive schema for ComponentElement to avoid `z.any()`
+const ComponentElementSchema: z.ZodType<ComponentElement> = z.lazy(() =>
+  z.object({
+    type: z.string(),
+    props: z.record(z.unknown()),
+    children: z.array(ComponentElementSchema).optional()
+  })
+);
+
+const SurgicalModificationSchema = z.object({
+  operation: z.enum(['modify', 'add', 'remove', 'replace']),
+  type: z.enum(['text', 'calculation', 'input', 'function', 'section', 'styling']),
+  target: z.string(),
+  details: z.object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+    newElement: ComponentElementSchema.optional(),
+    insertPosition: z.enum(['before', 'after', 'inside']).optional(),
+    removeTarget: z.string().optional(),
+    replaceWith: ComponentElementSchema.optional()
+  }),
+  reasoning: z.string()
+});
+
+const SurgicalPlanSchema = z.object({
+  sourceTemplate: z.string(),
+  modifications: z.array(SurgicalModificationSchema).optional().default([]),
+  dataRequirements: z.object({
+    researchQueries: z.array(z.string()).optional(),
+    expectedDataTypes: z.array(z.string()).optional()
+  }).partial().optional(),
+  templateEnhancements: z.array(z.string()).optional()
+});
+
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): SurgicalPlanningInput {
+function validateInput(input: SurgicalPlanningInput): SurgicalPlanningInput {
   if (!input || typeof input !== 'object' || !('preprocessingResult' in input)) {
     throw new Error('Invalid input: must be an object with preprocessingResult property');
   }
-  const typedInput = input as { preprocessingResult: any };
-  if (!typedInput.preprocessingResult || typeof typedInput.preprocessingResult !== 'object' || !('selectedTemplate' in typedInput.preprocessingResult)) {
+  if (!input.preprocessingResult || typeof input.preprocessingResult !== 'object' || !('selectedTemplate' in input.preprocessingResult)) {
     throw new Error('Invalid input: preprocessingResult with selectedTemplate required');
   }
-  return input as SurgicalPlanningInput;
+  return input;
 }
 
 // Utility: Build final prompt string by interpolating the preprocessing result
@@ -50,7 +84,7 @@ function shouldFallback(result?: SurgicalPlan, error?: unknown): boolean {
 }
 
 export async function runSurgicalPlanningAgent(
-  rawInput: any,
+  rawInput: SurgicalPlanningInput,
 ): Promise<SurgicalPlan> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -63,11 +97,11 @@ export async function runSurgicalPlanningAgent(
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
       prompt: systemPrompt,
-      output: 'no-schema',
+      schema: SurgicalPlanSchema,
       ...DEFAULT_GENERATION_OPTS,
     });
     // Cast through 'any' before final type
-    primaryResult = object as any as SurgicalPlan;
+    primaryResult = object as unknown as SurgicalPlan;
   } catch (err) {
     primaryError = err;
   }
@@ -80,10 +114,10 @@ export async function runSurgicalPlanningAgent(
   const { object } = await generateObject({
     model: MODELS.FALLBACK,
     prompt: systemPrompt,
-    output: 'no-schema',
+    schema: SurgicalPlanSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as any as SurgicalPlan;
+  return object as unknown as SurgicalPlan;
 }
 
 // Convenience exported default

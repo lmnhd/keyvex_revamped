@@ -4,21 +4,40 @@
  * NOTE: Do NOT import this file directly in Next.js pages/components; use it in the API route layer.
  */
 
-import { generateObject, type LanguageModelV1 } from 'ai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 import type { PreprocessingResult, ToolRequest as PreprocessingInput } from '@/lib/types/tool';
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
+// Zod schema to enforce exact AI output structure
+const PreprocessingResultSchema = z.object({
+  selectedTemplate: z.enum(['calculator', 'quiz', 'planner', 'form', 'diagnostic']),
+  templateFitScore: z.number().min(0).max(100).optional().default(0),
+  targetAudience: z.string().min(1).optional().default('General audience'),
+  modificationSignals: z.array(z.string()).optional().default([]),
+  businessAnalysis: z.object({
+    industry: z.string().min(1),
+    services: z.array(z.string()),
+    valueProposition: z.string().min(1),
+    leadGoals: z.array(z.string())
+  }).partial().optional(),
+  recommendedLeadCapture: z.object({
+    trigger: z.enum(['before_results', 'after_results']),
+    incentive: z.string().min(1),
+    additionalFields: z.array(z.string())
+  }).optional()
+});
+
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): PreprocessingInput {
+function validateInput(input: PreprocessingInput): PreprocessingInput {
   if (!input || typeof input !== 'object' || !('userPrompt' in input)) {
     throw new Error('Invalid input: must be an object with userPrompt property');
   }
-  const typedInput = input as { userPrompt: any; businessType?: any; industry?: any };
-  if (!typedInput.userPrompt || typeof typedInput.userPrompt !== 'string' || typedInput.userPrompt.length < 10) {
+  if (!input.userPrompt || typeof input.userPrompt !== 'string' || input.userPrompt.length < 10) {
     throw new Error('Invalid input: userPrompt required and must be at least 10 characters');
   }
-  return input as PreprocessingInput;
+  return input;
 }
 
 // Utility: Build final prompt string by interpolating the user description
@@ -40,8 +59,25 @@ function shouldFallback(result?: PreprocessingResult, error?: unknown): boolean 
   return result.templateFitScore < 80; // low-confidence threshold per spec
 }
 
+// Transform AI response to match our TypeScript interface
+function transformAIResponse(aiResponse: PreprocessingResult): PreprocessingResult {
+  // Ensure recommendedLeadCapture exists with sensible defaults
+  if (!aiResponse.recommendedLeadCapture) {
+    aiResponse = {
+      ...aiResponse,
+      recommendedLeadCapture: {
+        trigger: 'after_results',
+        incentive: '',
+        additionalFields: []
+      }
+    } as PreprocessingResult;
+  }
+  return aiResponse;
+}
+
+
 export async function runPreprocessingAgent(
-  rawInput: any,
+  rawInput: PreprocessingInput,
 ): Promise<PreprocessingResult> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -54,11 +90,11 @@ export async function runPreprocessingAgent(
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
       prompt: systemPrompt,
-      output: 'no-schema',
+      schema: PreprocessingResultSchema,
       ...DEFAULT_GENERATION_OPTS,
     });
-    // Cast through 'any' to bypass strict incompatibility checks
-    primaryResult = object as any as PreprocessingResult;
+    // Transform AI response to match our TypeScript interface
+    primaryResult = transformAIResponse(object as unknown as PreprocessingResult);
   } catch (err) {
     primaryError = err;
   }
@@ -71,10 +107,10 @@ export async function runPreprocessingAgent(
   const { object } = await generateObject({
     model: MODELS.FALLBACK,
     prompt: systemPrompt,
-    output: 'no-schema',
+    schema: PreprocessingResultSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as any as PreprocessingResult;
+  return transformAIResponse(object as unknown as PreprocessingResult);
 }
 
 // Convenience exported default

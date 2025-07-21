@@ -5,20 +5,44 @@
  */
 
 import { generateObject } from 'ai';
-import type { CodeGenerationInput, CodeGenerationResult } from '@/lib/types/tool';
+import { z } from 'zod';
+import type { CodeGenerationInput, CodeGenerationResult, Tool } from '@/lib/types/tool';
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
+// Zod schema enforcing exact CodeGenerationResult structure
+const ToolSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  type: z.enum(['calculator','quiz','planner','form','diagnostic']),
+  componentCode: z.string(),
+  leadCapture: z.object({
+    emailRequired: z.boolean(),
+    trigger: z.enum(['before_results','after_results','manual']),
+    incentive: z.string()
+  }),
+  createdAt: z.number(),
+  updatedAt: z.number()
+}).partial();
+
+const CodeGenerationSchema = z.object({
+  success: z.boolean(),
+  customizedTool: ToolSchema.optional(),
+  generatedCode: z.string().optional().default(''),
+  modificationsApplied: z.number().optional().default(0),
+  validationErrors: z.array(z.string()).optional().default([]),
+  enhancementsAdded: z.array(z.string()).optional().default([])
+});
+
 // Simple input validation instead of Zod schemas
-function validateInput(input: any): CodeGenerationInput {
+function validateInput(input: CodeGenerationInput): CodeGenerationInput {
   if (!input || typeof input !== 'object') {
     throw new Error('Invalid input: must be an object');
   }
-  const typedInput = input as { surgicalPlan?: any; researchData?: any };
-  if (!typedInput.surgicalPlan || !typedInput.researchData) {
+  if (!input.surgicalPlan || !input.researchData) {
     throw new Error('Invalid input: surgicalPlan and researchData required');
   }
-  return input as CodeGenerationInput;
+  return input;
 }
 
 // Utility: Build final prompt string by interpolating the surgical plan and research data
@@ -29,9 +53,11 @@ function buildPrompt(input: CodeGenerationInput): string {
     `${mod.operation} ${mod.type}: ${mod.target} - ${mod.reasoning}`
   ).join('\n');
   
-  const researchContext = Object.entries(researchData.modificationData)
-    .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-    .join('\n');
+  const researchContext = researchData.modificationData 
+    ? Object.entries(researchData.modificationData)
+        .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+        .join('\n')
+    : 'No modification data available';
   
   return [
     SYSTEM_PROMPT,
@@ -59,7 +85,7 @@ function shouldFallback(result?: CodeGenerationResult, error?: unknown): boolean
 }
 
 export async function runCodeGenerationAgent(
-  rawInput: any,
+  rawInput: CodeGenerationInput,
 ): Promise<CodeGenerationResult> {
   // 1. Simple validation instead of Zod schemas
   const input = validateInput(rawInput);
@@ -72,11 +98,11 @@ export async function runCodeGenerationAgent(
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
       prompt: systemPrompt,
-      output: 'no-schema',
+      schema: CodeGenerationSchema,
       ...DEFAULT_GENERATION_OPTS,
     });
     // Cast through 'any'
-    primaryResult = object as any as CodeGenerationResult;
+    primaryResult = object as unknown as CodeGenerationResult;
   } catch (err) {
     primaryError = err;
   }
@@ -89,10 +115,10 @@ export async function runCodeGenerationAgent(
   const { object } = await generateObject({
     model: MODELS.FALLBACK,
     prompt: systemPrompt,
-    output: 'no-schema',
+    schema: CodeGenerationSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as any as CodeGenerationResult;
+  return object as unknown as CodeGenerationResult;
 }
 
 // Convenience exported default
