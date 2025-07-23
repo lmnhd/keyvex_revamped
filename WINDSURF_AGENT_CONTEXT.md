@@ -1,218 +1,195 @@
-# Windsurf Agent Context - Enhanced Preprocessing Agent Implementation
+# WINDSURF AGENT TASK: Implement Option 4 - Minimal Function Constructor
 
-## 🎯 TASK OBJECTIVE
+## 🎯 OBJECTIVE
+Simplify the dynamic component renderer by removing the complex transpilation chain and implementing a minimal Function constructor approach while maintaining ShadCN component support.
 
-**Create the Enhanced Preprocessing Agent** - The first step in our AI-first surgical modification pipeline.
+## 🚨 CRITICAL RULES
+- **HARD FAILS ONLY** - No fallback logic, no graceful degradation, no retry mechanisms
+- **If something fails, it should fail clearly and immediately**
+- **Do not implement any try-catch that hides real errors**
+- **Remove all misleading error handling**
 
-This agent takes raw user business descriptions and outputs structured template selection + modification signals for the surgical planning agent.
+## 📋 COMPLETE TASK LIST
 
-## 📋 IMPLEMENTATION REQUIREMENTS
+### Task 1: Simplify Dynamic Component Renderer
+**File**: `/src/components/canvas/dynamic-component-renderer.tsx`
 
-### 1. File Structure to Create
-```
-/keyvex_revamped/src/lib/ai/
-├── agents/
-│   └── preprocessing/
-│       ├── core-logic.ts          # Main preprocessing logic
-│       ├── schema.ts               # Zod schemas for input/output
-│       ├── prompt.ts               # AI prompt template
-│       └── types.ts                # TypeScript definitions
-└── models/
-    └── model-config.ts             # AI model configuration
-```
+**Remove Complex Logic:**
+- ✅ Remove entire `transformComponentCode()` call and babel transpilation
+- ✅ Remove `validateComponentSyntax()` calls
+- ✅ Remove `detectComponentCodeFormat()` analysis
+- ✅ Remove complex error boundaries and retry logic
+- ✅ Remove `prepareCodeForTranspilation()` and `cleanAndWrapCode()`
 
-### 2. Core Functionality
-The Enhanced Preprocessing Agent must:
-- **Analyze business descriptions** to identify industry, audience, services
-- **Map to appropriate tool type** (Calculator, Quiz, Planner, Form, Diagnostic)  
-- **Generate template fit score** (0-100) for confidence level
-- **Extract modification signals** for surgical planning
-- **Identify lead capture strategy** aligned with business model
-
-### 3. Input/Output Schema
+**Implement Minimal Function Constructor:**
 ```typescript
-// INPUT: Raw user description
-interface PreprocessingInput {
-  userPrompt: string;           // Raw business description
-  businessType?: string;        // Optional industry context
-  industry?: string;            // Optional industry specification
+const renderComponent = useCallback(async (code: string) => {
+  // 1. Strip TypeScript syntax only (keep this part)
+  const cleanCode = stripTypeScript(code);
+  
+  // 2. Remove imports and exports
+  const codeWithoutImports = cleanCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
+  const codeWithoutExports = codeWithoutImports.replace(/export\s+default\s+/g, '');
+  
+  // 3. Create minimal function constructor
+  const createComponent = new Function(
+    'React', 'useState', 'useEffect', 'useCallback', 'useMemo', // React hooks
+    'Button', 'Input', 'Label', 'Card', 'CardContent', 'CardHeader', 'CardTitle', // ShadCN UI
+    'Select', 'SelectContent', 'SelectItem', 'SelectTrigger', 'SelectValue',
+    'Checkbox', 'Slider', 'Badge',
+    `return (${codeWithoutExports})`
+  );
+  
+  // 4. Execute with dependencies
+  const Component = createComponent(
+    React, React.useState, React.useEffect, React.useCallback, React.useMemo,
+    Button, Input, Label, Card, CardContent, CardHeader, CardTitle,
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+    Checkbox, Slider, Badge
+  );
+  
+  // 5. Hard fail if invalid
+  if (typeof Component !== 'function') {
+    throw new Error('Generated code did not return a React component function');
+  }
+  
+  setRenderState({
+    isLoading: false,
+    isRendered: true,
+    error: null,
+    Component: Component
+  });
+}, []);
+```
+
+### Task 2: Remove JSX Transpiler Complexity
+**File**: `/src/lib/transpilation/jsx-transpiler.ts`
+
+**Keep Only:**
+- ✅ `stripTypeScript()` function (lines 108-132)
+- ✅ Basic import/export removal
+- ✅ Remove all Babel integration
+- ✅ Remove `transformComponentCode()`, `validateComponentSyntax()`, `detectComponentCodeFormat()`
+- ✅ Remove `prepareCodeForTranspilation()`, `cleanAndWrapCode()`
+
+**New Simplified File:**
+```typescript
+/**
+ * Simple TypeScript Stripper - No Babel, No Transpilation
+ */
+
+export function stripTypeScript(code: string): string {
+  let cleanCode = code;
+  
+  // Remove interface declarations
+  cleanCode = cleanCode.replace(/interface\s+\w+\s*{[^}]*}/g, '');
+  
+  // Remove type annotations from variables
+  cleanCode = cleanCode.replace(/:\s*\w+(\[\]|\<[^>]*\>)*(\s*\|\s*\w+(\[\]|\<[^>]*\>)*)*(?=\s*[=;,)])/g, '');
+  
+  // Remove generic type parameters
+  cleanCode = cleanCode.replace(/<[^>]*>/g, '');
+  
+  // Remove React.FC and similar type annotations
+  cleanCode = cleanCode.replace(/:\s*React\.FC\s*/g, '');
+  
+  // Remove Record and other utility types
+  cleanCode = cleanCode.replace(/Record<[^>]*>/g, 'any');
+  
+  // Clean up multiple spaces and empty lines
+  cleanCode = cleanCode.replace(/\s+/g, ' ').replace(/\n\s*\n/g, '\n');
+  
+  return cleanCode.trim();
 }
 
-// OUTPUT: Structured analysis for surgical planning
-interface PreprocessingResult {
-  selectedTemplate: string;           // Calculator|Quiz|Planner|Form|Diagnostic
-  templateFitScore: number;           // 0-100 confidence score
-  targetAudience: string;             // Identified target audience
-  modificationSignals: string[];      // Signals for surgical modifications
-  businessAnalysis: {
-    industry: string;
-    services: string[];
-    valueProposition: string;
-    leadGoals: string[];
-  };
-  recommendedLeadCapture: {
-    trigger: 'before_results' | 'after_results';
-    incentive: string;
-    additionalFields: string[];
-  };
+export function removeImportsAndExports(code: string): string {
+  let cleanCode = code;
+  
+  // Remove imports
+  cleanCode = cleanCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
+  
+  // Remove exports
+  cleanCode = cleanCode.replace(/export\s+default\s+/g, '');
+  cleanCode = cleanCode.replace(/export\s*{\s*.*?\s*};?\s*/g, '');
+  
+  return cleanCode.trim();
 }
 ```
 
-## 🔧 TECHNICAL SPECIFICATIONS
+### Task 3: Update Code Generation Agent Prompts
+**File**: `/src/lib/ai/agents/code-generation/prompt.ts`
 
-### Required Dependencies
-```typescript
-import { z } from 'zod';
-import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
-import { anthropic } from '@ai-sdk/anthropic';
+**Add to CRITICAL REQUIREMENTS:**
+```
+8. Generate ONLY the React functional component - no imports, no exports
+9. Component must be a complete function that can be wrapped in Function constructor
+10. Use only injected dependencies (React hooks and ShadCN components available)
+11. Do NOT include: import statements, export statements, TypeScript interfaces outside component
 ```
 
-### AI Model Configuration
-- **Primary Model**: Claude 3.5 Sonnet (anthropic) for complex analysis
-- **Fallback Model**: GPT-4o (openai) for reliability
-- **Temperature**: 0.3 (balanced creativity/consistency)
-- **Max Tokens**: 1500 (structured output)
-
-### Template Matching Logic
-The agent must analyze user input against these tool types:
-
-1. **Calculator Tools**
-   - Keywords: cost, price, ROI, savings, estimate, calculate, budget
-   - Business types: Financial services, SaaS, consultants
-   - Value delivery: Numerical analysis, financial insights
-
-2. **Quiz/Assessment Tools**  
-   - Keywords: assess, evaluate, ready, fit, personality, skills
-   - Business types: Coaches, consultants, training companies
-   - Value delivery: Personalized recommendations, readiness scores
-
-3. **Planner Tools**
-   - Keywords: plan, schedule, timeline, itinerary, calendar
-   - Business types: Travel agencies, marketing agencies, event planners
-   - Value delivery: Structured plans, timelines, schedules
-
-4. **Form/Generator Tools**
-   - Keywords: generate, create, build, proposal, document, contract
-   - Business types: Legal services, agencies, B2B services  
-   - Value delivery: Custom documents, proposals, reports
-
-5. **Diagnostic Tools**
-   - Keywords: audit, check, analyze, diagnose, review, health
-   - Business types: Consultants, technical services, healthcare
-   - Value delivery: Analysis, recommendations, improvement plans
-
-## 📄 IMPLEMENTATION REFERENCE
-
-### Core Architecture Pattern
-Based on legacy system at `/keyvex_app/src/app/api/ai/logic-architect/brainstorm/core-logic.ts`:
-- **Input validation** with Zod schemas
-- **AI model selection** with fallback logic  
-- **Structured output generation** using AI SDK
-- **Error handling** with descriptive messages
-- **Type safety** throughout the pipeline
-
-### Key Files to Reference
-- **`/keyvex_app/src/lib/ai/models/model-config.ts`** - Model provider configuration
-- **`/keyvex_app/src/app/api/ai/logic-architect/brainstorm/core-logic.ts`** - Business analysis patterns
-- **`/keyvex_revamped/src/lib/types/tool.ts`** - Type definitions (already exists)
-- **`/keyvex_revamped/PROJECT_DOCUMENTATION.md`** - Tool type taxonomy and requirements
-
-## 🚀 PROMPT ENGINEERING GUIDELINES
-
-### System Prompt Structure
+**Update COMPONENT STRUCTURE:**
 ```
-You are the Enhanced Preprocessing Agent for the Keyvex template-first lead magnet generation system.
-
-Your role is to analyze raw business descriptions and map them to the optimal tool template with surgical modification signals.
-
-CRITICAL REQUIREMENTS:
-1. Every tool MUST serve dual objectives: Lead Collection + Value Delivery
-2. All inputs must be pre-set options (dropdowns, checkboxes, sliders) - NO text inputs
-3. Focus on template-first approach with surgical modifications
-4. Generate realistic modification signals for the surgical planning agent
-5. Recommend lead capture strategy aligned with business model
-
-TOOL TYPE TAXONOMY:
-- Calculator: Numerical analysis, financial insights (ROI, pricing, savings)
-- Quiz/Assessment: Personalized recommendations, readiness evaluation  
-- Planner: Structured plans, timelines, schedules
-- Form/Generator: Custom documents, proposals, reports
-- Diagnostic: Analysis, audits, health checks, recommendations
-
-BUSINESS ANALYSIS FRAMEWORK:
-- Industry identification and target audience
-- Service offerings and value proposition  
-- Lead generation goals and client insights needed
-- Template fit analysis with confidence scoring
-- Modification signals for surgical customization
+- React functional component with hooks (injected as dependencies)
+- State management using injected React hooks (useState, useEffect, etc.)
+- ShadCN UI components (Button, Input, Card, etc. - all injected)
+- NO import/export statements
+- Component should be ready for Function constructor execution
 ```
 
-### Output Format Requirements
-- **Structured JSON** following PreprocessingResult schema
-- **High confidence scores** (80+) for clear matches
-- **Detailed modification signals** for surgical planning
-- **Specific lead capture recommendations** 
-- **Clear reasoning** for template selection
+### Task 4: Remove Babel Dependencies
+**File**: `/src/lib/transpilation/babel-loader.ts`
 
-## ✅ TESTING REQUIREMENTS
+**Action**: Delete this entire file - no longer needed
 
-### Test Cases to Implement
-Create test cases for each tool type:
+### Task 5: Update Component Renderer Imports
+**File**: `/src/components/canvas/dynamic-component-renderer.tsx`
 
-1. **Calculator Example**: "I'm a financial advisor who wants to help clients calculate retirement savings needed based on their age, income, and goals"
+**Remove Imports:**
+- ✅ Remove `import { transformComponentCode, validateComponentSyntax } from '@/lib/transpilation/jsx-transpiler';`
 
-2. **Quiz Example**: "I'm a business coach who wants to assess if entrepreneurs are ready to scale their business"
+**Add New Import:**
+- ✅ `import { stripTypeScript, removeImportsAndExports } from '@/lib/transpilation/jsx-transpiler';`
 
-3. **Planner Example**: "I'm a travel agent who wants to help clients plan their perfect vacation itinerary"
+### Task 6: Test with Wedding Photography Calculator
+**File**: Test the simplified renderer with existing generated components
 
-4. **Form Example**: "I'm a lawyer who wants to generate custom contracts for small businesses"  
-
-5. **Diagnostic Example**: "I'm a marketing consultant who wants to audit businesses' digital marketing effectiveness"
-
-### Expected Outputs
-Each test should produce:
-- **Correct template selection** with high fit score
-- **Relevant modification signals** 
-- **Appropriate lead capture strategy**
-- **Detailed business analysis**
-
-## 🔄 INTEGRATION POINTS
-
-### Input Source
-- **API Route**: `/api/ai/agents/preprocessing` (to be created)
-- **Frontend**: Template selection interface
-- **Legacy Integration**: Enhanced brainstorm process
-
-### Output Destination  
-- **Next Agent**: Template-Aware Surgical Planning Agent
-- **Storage**: Session state or database persistence
-- **UI Feedback**: Template recommendation with confidence
-
-### Error Handling
-- **Model Failures**: Fallback to secondary AI model
-- **Low Confidence**: Request more user context
-- **Invalid Input**: Clear validation error messages
-- **Timeout**: Graceful degradation with basic template suggestion
-
-## 📋 DELIVERABLES CHECKLIST
-
-- [ ] `/src/lib/ai/agents/preprocessing/core-logic.ts` - Main implementation
-- [ ] `/src/lib/ai/agents/preprocessing/schema.ts` - Zod validation schemas  
-- [ ] `/src/lib/ai/agents/preprocessing/prompt.ts` - AI prompt template
-- [ ] `/src/lib/ai/agents/preprocessing/types.ts` - TypeScript definitions
-- [ ] `/src/lib/ai/models/model-config.ts` - Model configuration (if not exists)
-- [ ] Test cases demonstrating all 5 tool types
-- [ ] Error handling for edge cases
-- [ ] Documentation with usage examples
+**Verification Steps:**
+1. ✅ Generate wedding photography calculator
+2. ✅ Verify component renders without transpilation errors
+3. ✅ Confirm ShadCN components work correctly
+4. ✅ Ensure lead capture functionality works
+5. ✅ Test responsive design and styling
 
 ## 🎯 SUCCESS CRITERIA
 
-1. **Accurate Template Matching**: 90%+ accuracy on test cases
-2. **High Confidence Scores**: 80+ for clear business descriptions  
-3. **Useful Modification Signals**: Actionable insights for surgical planning
-4. **Lead Capture Alignment**: Strategy matches business model and tool type
-5. **Type Safety**: Full TypeScript coverage with no 'any' types
-6. **Error Resilience**: Graceful handling of all failure modes
+**Before (Complex):**
+```
+AI Code → TypeScript Strip → Import/Export Removal → Babel Transpile → Function Constructor → Component
+```
 
-This agent is the foundation of our AI-first surgical modification system. Focus on accuracy, type safety, and comprehensive error handling.
+**After (Simple):**
+```
+AI Code → TypeScript Strip → Import/Export Removal → Function Constructor → Component  
+```
+
+**Verification:**
+- ✅ Wedding photography calculator renders successfully
+- ✅ All ShadCN components work without imports
+- ✅ No Babel dependencies or transpilation errors
+- ✅ Hard fails show clear error messages (no hidden fallbacks)
+- ✅ Component execution is fast and reliable
+
+## 🚨 ERROR HANDLING RULES
+- **NO try-catch blocks that hide errors**
+- **NO fallback logic or graceful degradation**  
+- **Throw clear, descriptive errors immediately**
+- **Let failures bubble up to show real issues**
+
+## 🔧 EXPECTED BENEFITS
+1. **Simpler Architecture** - Remove 80% of transpilation complexity
+2. **Faster Execution** - No Babel processing overhead
+3. **Clearer Errors** - Direct Function constructor errors vs. hidden transpilation issues
+4. **Maintain ShadCN** - Keep all UI components working
+5. **LLM Friendly** - Simpler code format requirements
+
+Execute these tasks in order and verify each step works before proceeding to the next.

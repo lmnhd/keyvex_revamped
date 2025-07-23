@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, ErrorInfo } from 'react';
-import { transformComponentCode, validateComponentSyntax } from '@/lib/transpilation/jsx-transpiler';
+import { stripTypeScript, removeImportsAndExports } from '@/lib/transpilation/jsx-transpiler';
 import type { ComponentProps } from '@/lib/types/tool';
 
 // Import Shadcn/UI components for dependency injection
@@ -101,91 +101,49 @@ export function DynamicComponentRenderer({
   }, [onRenderError]);
 
   /**
-   * Render the component from code
+   * Render the component from code - SIMPLIFIED MINIMAL FUNCTION CONSTRUCTOR
    */
   const renderComponent = useCallback(async (code: string) => {
-    try {
-      setRenderState(prev => ({ ...prev, isLoading: true, error: null }));
-      onRenderStart?.();
+    setRenderState(prev => ({ ...prev, isLoading: true, error: null }));
+    onRenderStart?.();
 
-      // Validate syntax first
-      const validation = validateComponentSyntax(code);
-      if (!validation.isValid) {
-        throw new Error(`Syntax Error: ${validation.error}`);
-      }
-
-      // Transform JSX to executable code
-      const transpileResult = await transformComponentCode(code);
-      if (!transpileResult.success) {
-        throw new Error(`Transpilation Error: ${transpileResult.error}`);
-      }
-
-      if (!transpileResult.code) {
-        throw new Error('Transpilation produced empty code');
-      }
-
-      // Create component dependencies
-      const dependencies = {
-        React,
-        useState: React.useState,
-        useEffect: React.useEffect,
-        useCallback: React.useCallback,
-        useMemo: React.useMemo,
-        Button,
-        Input,
-        Label,
-        Card,
-        CardContent,
-        CardHeader,
-        CardTitle,
-        Select,
-        SelectContent,
-        SelectItem,
-        SelectTrigger,
-        SelectValue,
-        Checkbox,
-        Slider,
-        Badge
-      };
-
-      // Create dependency arrays for Function constructor
-      const dependencyNames = Object.keys(dependencies);
-      const dependencyValues = Object.values(dependencies);
-
-      // Execute the component code safely
-      const componentFunction = new Function(
-        ...dependencyNames,
-        transpileResult.code
-      );
-
-      const ComponentImpl = componentFunction(...dependencyValues);
-
-      if (typeof ComponentImpl !== 'function') {
-        throw new Error('Generated code did not return a valid React component');
-      }
-
-      // Test render the component
-      try {
-        React.createElement(ComponentImpl);
-      } catch (testError) {
-        throw new Error(`Component test failed: ${testError instanceof Error ? testError.message : 'Unknown error'}`);
-      }
-
-      // Success - update state
-      setRenderState({
-        isLoading: false,
-        isRendered: true,
-        error: null,
-        Component: ComponentImpl
-      });
-
-      onRenderSuccess?.();
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown rendering error';
-      handleError(errorMessage);
+    // 1. Strip TypeScript syntax only
+    const cleanCode = stripTypeScript(code);
+    
+    // 2. Remove imports and exports
+    const codeWithoutImports = removeImportsAndExports(cleanCode);
+    
+    // 3. Create minimal function constructor
+    const createComponent = new Function(
+      'React', 'useState', 'useEffect', 'useCallback', 'useMemo', // React hooks
+      'Button', 'Input', 'Label', 'Card', 'CardContent', 'CardHeader', 'CardTitle', // ShadCN UI
+      'Select', 'SelectContent', 'SelectItem', 'SelectTrigger', 'SelectValue',
+      'Checkbox', 'Slider', 'Badge',
+      `return (${codeWithoutImports})`
+    );
+    
+    // 4. Execute with dependencies
+    const Component = createComponent(
+      React, React.useState, React.useEffect, React.useCallback, React.useMemo,
+      Button, Input, Label, Card, CardContent, CardHeader, CardTitle,
+      Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+      Checkbox, Slider, Badge
+    );
+    
+    // 5. Hard fail if invalid
+    if (typeof Component !== 'function') {
+      throw new Error('Generated code did not return a React component function');
     }
-  }, [onRenderStart, onRenderSuccess, handleError]);
+    
+    setRenderState({
+      isLoading: false,
+      isRendered: true,
+      error: null,
+      Component: Component
+    });
+
+    onRenderSuccess?.();
+  }, [onRenderStart, onRenderSuccess]);
 
   /**
    * Re-render when component code changes
@@ -228,13 +186,6 @@ export function DynamicComponentRenderer({
           <h3 className="font-medium">Render Error</h3>
         </div>
         <p className="text-sm text-red-600 mb-3">{renderState.error}</p>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => renderComponent(componentCode)}
-        >
-          Retry Render
-        </Button>
       </div>
     );
   }

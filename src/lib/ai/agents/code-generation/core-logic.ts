@@ -6,9 +6,10 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { parse } from '@babel/parser';
 import type { CodeGenerationInput, CodeGenerationResult, Tool } from '@/lib/types/tool';
 import { SYSTEM_PROMPT } from './prompt';
-import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
+import { MODELS, CODE_GENERATION_OPTS } from '../../models/model-config';
 
 // Zod schema enforcing exact CodeGenerationResult structure
 const ToolSchema = z.object({
@@ -23,12 +24,12 @@ const ToolSchema = z.object({
   }),
   createdAt: z.number(),
   updatedAt: z.number()
-}).partial();
+});
 
 const CodeGenerationSchema = z.object({
   success: z.boolean(),
   customizedTool: ToolSchema.optional(),
-  generatedCode: z.string().optional().default(''),
+  generatedCode: z.string().min(50),
   modificationsApplied: z.number().optional().default(0),
   validationErrors: z.array(z.string()).optional().default([]),
   enhancementsAdded: z.array(z.string()).optional().default([])
@@ -75,14 +76,24 @@ function buildPrompt(input: CodeGenerationInput): string {
   ].join('\n');
 }
 
-// Decide if we should fall back based on result or thrown error
-function shouldFallback(result?: CodeGenerationResult, error?: unknown): boolean {
-  if (error) return true;
-  if (!result) return true;
-  if (!result.success) return true;
-  if (!result.generatedCode || result.generatedCode.trim().length === 0) return true;
-  return false;
+// Utility: quick syntax validation for generated React/JSX code
+function isValidReact(code: string): boolean {
+  try {
+    parse(code, { sourceType: 'module', plugins: ['jsx', 'typescript'] });
+    // ensure exported default name matches first JSX tag
+    const exportMatch = code.match(/export\s+default\s+([A-Za-z0-9_]+)/);
+    if (!exportMatch) return false;
+    const exportedName = exportMatch[1];
+    const jsxTagMatch = code.match(/<([A-Z][A-Za-z0-9_]*)/);
+    if (!jsxTagMatch) return false;
+    if (jsxTagMatch[1] !== exportedName) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
+
+// Removed shouldFallback function - using HARD FAILS ONLY
 
 export async function runCodeGenerationAgent(
   rawInput: CodeGenerationInput,
@@ -91,34 +102,30 @@ export async function runCodeGenerationAgent(
   const input = validateInput(rawInput);
   const systemPrompt = buildPrompt(input);
 
-  // 2. PRIMARY model attempt
-  let primaryResult: CodeGenerationResult | undefined;
-  let primaryError: unknown;
-  try {
-    const { object } = await generateObject({
-      model: MODELS.PRIMARY,
-      prompt: systemPrompt,
-      schema: CodeGenerationSchema,
-      ...DEFAULT_GENERATION_OPTS,
-    });
-    // Cast through 'any'
-    primaryResult = object as unknown as CodeGenerationResult;
-  } catch (err) {
-    primaryError = err;
-  }
-
-  if (!shouldFallback(primaryResult, primaryError)) {
-    return primaryResult as CodeGenerationResult;
-  }
-
-  // 3. FALLBACK model attempt
+  // 2. SINGLE ATTEMPT - HARD FAIL ONLY (NO FALLBACKS)
   const { object } = await generateObject({
-    model: MODELS.FALLBACK,
+    model: MODELS.PRIMARY,
     prompt: systemPrompt,
     schema: CodeGenerationSchema,
-    ...DEFAULT_GENERATION_OPTS,
+    ...CODE_GENERATION_OPTS,
   });
-  return object as unknown as CodeGenerationResult;
+  
+  const result = object as unknown as CodeGenerationResult;
+  
+  // 3. HARD VALIDATION - FAIL IMMEDIATELY IF INVALID
+  if (!result.success) {
+    throw new Error('Code generation agent returned success: false');
+  }
+  
+  if (!result.generatedCode || result.generatedCode.trim().length === 0) {
+    throw new Error('Code generation agent returned empty generatedCode');
+  }
+  
+  if (!isValidReact(result.generatedCode)) {
+    throw new Error(`Code generation agent produced invalid JSX: ${result.generatedCode.substring(0, 200)}...`);
+  }
+  
+  return result;
 }
 
 // Convenience exported default

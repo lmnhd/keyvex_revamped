@@ -28,6 +28,14 @@ export async function POST(request: NextRequest) {
       industry
     });
 
+    console.log('=== PREPROCESSING RESULT DEBUG ===');
+    console.log('Type:', typeof preprocessingResult);
+    console.log('Keys:', Object.keys(preprocessingResult || {}));
+    console.log('Full result:', JSON.stringify(preprocessingResult, null, 2));
+    console.log('Has selectedTemplate:', 'selectedTemplate' in (preprocessingResult || {}));
+    console.log('selectedTemplate value:', preprocessingResult?.selectedTemplate);
+    console.log('================================');
+
     // STEP 2: Run Surgical Planning Agent
     const surgicalPlan = await runSurgicalPlanningAgent({
       preprocessingResult
@@ -38,11 +46,30 @@ export async function POST(request: NextRequest) {
       surgicalPlan
     });
 
+    console.log('=== DATA RESEARCH RESULT DEBUG ===');
+    console.log('Type:', typeof researchData);
+    console.log('Keys:', Object.keys(researchData || {}));
+    console.log('Has modificationData:', 'modificationData' in (researchData || {}));
+    console.log('ModificationData type:', typeof researchData?.modificationData);
+    console.log('ModificationData value:', researchData?.modificationData);
+    console.log('Full result:', JSON.stringify(researchData, null, 2));
+    console.log('===================================');
+
     // STEP 4: Run Code Generation Agent
     const codeGenerationResult = await runCodeGenerationAgent({
       surgicalPlan,
       researchData
     });
+
+    console.log('=== CODE GENERATION RESULT DEBUG ===');
+    console.log('Type:', typeof codeGenerationResult);
+    console.log('Keys:', Object.keys(codeGenerationResult || {}));
+    console.log('Success:', codeGenerationResult?.success);
+    console.log('Has customizedTool:', 'customizedTool' in (codeGenerationResult || {}));
+    console.log('CustomizedTool value:', codeGenerationResult?.customizedTool);
+    console.log('Validation errors:', codeGenerationResult?.validationErrors);
+    console.log('Full result:', JSON.stringify(codeGenerationResult, null, 2));
+    console.log('=====================================');
 
     if (!codeGenerationResult.success || !codeGenerationResult.customizedTool) {
       throw new Error('Code generation failed: ' + (codeGenerationResult.validationErrors?.join(', ') || 'Unknown error'));

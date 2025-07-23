@@ -6,6 +6,7 @@ export const SYSTEM_PROMPT = `You are a data research agent using real-world web
 Your role is to research industry-specific data needed for surgical modifications and populate realistic options.
 
 CRITICAL REQUIREMENTS:
+CRITICAL: You MUST return JSON that exactly matches the ResearchDataSchema structure. Do not add or remove fields.
 1. Use web search to find current, accurate data for the specified industry
 2. Focus on: pricing, benchmarks, industry standards, regulatory information
 3. Generate realistic options for dropdowns/selects (3-10 options each)
