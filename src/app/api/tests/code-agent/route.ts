@@ -1,26 +1,36 @@
-import { NextResponse } from 'next/server';
-import { runCodeGenerationAgent } from '@/lib/ai/agents/code-generation/core-logic';
-import type { CodeGenerationInput } from '@/lib/types/tool';
-import json from './code-gen-input.json'
+import { NextRequest, NextResponse } from 'next/server';
 
-// -------------------------------------------------------------
-// VERY SIMPLE TEST ENDPOINT
+// Updated Test Endpoint
 // GET /api/tests/code-agent
-// Runs the code-generation agent with a hard-coded example input so
-// you can quickly iterate on prompt tweaks without invoking the full
-// surgical pipeline.
-// -------------------------------------------------------------
+// Invokes the new FileCoder surgical pipeline with a fixed prompt
+// and returns the full JSON result so frontend pages can render the
+// generated tool and inspect intermediary data.
 
-const savedInput: CodeGenerationInput = json as unknown as CodeGenerationInput;
+/** Default prompt used if `prompt` query param is not provided */
+const DEFAULT_PROMPT = 'I need a mortgage payment calculator for real estate agents';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = new URL(request.url);
+  const userPrompt = searchParams.get('prompt') ?? DEFAULT_PROMPT;
+
   try {
-    const result = await runCodeGenerationAgent(savedInput);
-    return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message ?? 'Unknown error', stack: error?.stack },
-      { status: 500 },
-    );
+    const pipelineRes = await fetch(`${origin}/api/ai/surgical-pipeline/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userPrompt }),
+    });
+
+    // If the downstream route fails, bubble the status back
+    if (!pipelineRes.ok) {
+      const errPayload = await pipelineRes.json();
+      return NextResponse.json(errPayload, { status: pipelineRes.status });
+    }
+
+    // Successful pipeline run
+    const data = await pipelineRes.json();
+    return NextResponse.json(data);
+  } catch (err) {
+    console.error('tests/code-agent route error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

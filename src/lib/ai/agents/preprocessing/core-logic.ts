@@ -10,6 +10,19 @@ import type { PreprocessingResult, ToolRequest as PreprocessingInput } from '@/l
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
+// Concrete interface for AI response validation
+interface AIResponseError {
+  message: string;
+  code?: string;
+  details?: string;
+}
+
+// Concrete interface for fallback decision
+interface FallbackDecision {
+  shouldFallback: boolean;
+  reason?: string;
+}
+
 // Zod schema to enforce exact AI output structure
 const PreprocessingResultSchema = z.object({
   selectedTemplate: z.enum(['calculator', 'quiz', 'planner', 'form', 'diagnostic']),
@@ -53,10 +66,17 @@ function buildPrompt(input: PreprocessingInput): string {
 }
 
 // Decide if we should fall back based on result score or thrown error
-function shouldFallback(result?: PreprocessingResult, error?: unknown): boolean {
-  if (error) return true;
-  if (!result) return true;
-  return result.templateFitScore < 80; // low-confidence threshold per spec
+function shouldFallback(result?: PreprocessingResult, error?: AIResponseError): FallbackDecision {
+  if (error) {
+    return { shouldFallback: true, reason: `Error occurred: ${error.message}` };
+  }
+  if (!result) {
+    return { shouldFallback: true, reason: 'No result received' };
+  }
+  if (result.templateFitScore < 80) {
+    return { shouldFallback: true, reason: `Low confidence score: ${result.templateFitScore}` };
+  }
+  return { shouldFallback: false };
 }
 
 // Transform AI response to match our TypeScript interface
@@ -75,7 +95,6 @@ function transformAIResponse(aiResponse: PreprocessingResult): PreprocessingResu
   return aiResponse;
 }
 
-
 export async function runPreprocessingAgent(
   rawInput: PreprocessingInput,
 ): Promise<PreprocessingResult> {
@@ -85,7 +104,7 @@ export async function runPreprocessingAgent(
 
   // 2. PRIMARY model attempt
   let primaryResult: PreprocessingResult | undefined;
-  let primaryError: unknown;
+  let primaryError: AIResponseError | undefined;
   try {
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
@@ -94,12 +113,17 @@ export async function runPreprocessingAgent(
       ...DEFAULT_GENERATION_OPTS,
     });
     // Transform AI response to match our TypeScript interface
-    primaryResult = transformAIResponse(object as unknown as PreprocessingResult);
+    primaryResult = transformAIResponse(object as PreprocessingResult);
   } catch (err) {
-    primaryError = err;
+    primaryError = {
+      message: err instanceof Error ? err.message : 'Unknown error occurred',
+      code: err instanceof Error && 'code' in err ? String(err.code) : undefined,
+      details: err instanceof Error ? err.stack : undefined
+    };
   }
 
-  if (!shouldFallback(primaryResult, primaryError)) {
+  const fallbackDecision = shouldFallback(primaryResult, primaryError);
+  if (!fallbackDecision.shouldFallback) {
     return primaryResult as PreprocessingResult;
   }
 
@@ -110,7 +134,7 @@ export async function runPreprocessingAgent(
     schema: PreprocessingResultSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return transformAIResponse(object as unknown as PreprocessingResult);
+  return transformAIResponse(object as PreprocessingResult);
 }
 
 // Convenience exported default

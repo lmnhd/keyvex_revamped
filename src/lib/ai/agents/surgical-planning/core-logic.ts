@@ -10,6 +10,37 @@ import type { SurgicalPlanningInput, SurgicalPlan, ComponentElement } from '@/li
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
 
+// Concrete interface for surgical modification details
+interface SurgicalModificationDetails {
+  from?: string;
+  to?: string;
+  newElement?: ComponentElement;
+  insertPosition?: 'before' | 'after' | 'inside';
+  removeTarget?: string;
+  replaceWith?: ComponentElement;
+  [key: string]: unknown; // Allow additional properties
+}
+
+// Concrete interface for data requirements
+interface DataRequirements {
+  researchQueries: string[];
+  expectedDataTypes: string[];
+  [key: string]: unknown; // Allow additional properties
+}
+
+// Concrete interface for AI response validation
+interface AIResponseError {
+  message: string;
+  code?: string;
+  details?: string;
+}
+
+// Concrete interface for fallback decision
+interface FallbackDecision {
+  shouldFallback: boolean;
+  reason?: string;
+}
+
 // Ultra-flexible schema to prevent AI validation failures
 const SurgicalModificationSchema = z.object({
   operation: z.enum(['modify', 'add', 'remove', 'replace']),
@@ -58,11 +89,17 @@ function buildPrompt(input: SurgicalPlanningInput): string {
 }
 
 // Decide if we should fall back based on result or thrown error
-function shouldFallback(result?: SurgicalPlan, error?: unknown): boolean {
-  if (error) return true;
-  if (!result) return true;
-  if (!result.modifications || result.modifications.length === 0) return true;
-  return false;
+function shouldFallback(result?: SurgicalPlan, error?: AIResponseError): FallbackDecision {
+  if (error) {
+    return { shouldFallback: true, reason: `Error occurred: ${error.message}` };
+  }
+  if (!result) {
+    return { shouldFallback: true, reason: 'No result received' };
+  }
+  if (!result.modifications || result.modifications.length === 0) {
+    return { shouldFallback: true, reason: 'No modifications specified' };
+  }
+  return { shouldFallback: false };
 }
 
 export async function runSurgicalPlanningAgent(
@@ -74,7 +111,7 @@ export async function runSurgicalPlanningAgent(
 
   // 2. PRIMARY model attempt
   let primaryResult: SurgicalPlan | undefined;
-  let primaryError: unknown;
+  let primaryError: AIResponseError | undefined;
   try {
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
@@ -82,13 +119,18 @@ export async function runSurgicalPlanningAgent(
       schema: SurgicalPlanSchema,
       ...DEFAULT_GENERATION_OPTS,
     });
-    // Cast through 'any' before final type
-    primaryResult = object as unknown as SurgicalPlan;
+    // Cast through concrete type
+    primaryResult = object as SurgicalPlan;
   } catch (err) {
-    primaryError = err;
+    primaryError = {
+      message: err instanceof Error ? err.message : 'Unknown error occurred',
+      code: err instanceof Error && 'code' in err ? String(err.code) : undefined,
+      details: err instanceof Error ? err.stack : undefined
+    };
   }
 
-  if (!shouldFallback(primaryResult, primaryError)) {
+  const fallbackDecision = shouldFallback(primaryResult, primaryError);
+  if (!fallbackDecision.shouldFallback) {
     return primaryResult as SurgicalPlan;
   }
 
@@ -99,7 +141,7 @@ export async function runSurgicalPlanningAgent(
     schema: SurgicalPlanSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as unknown as SurgicalPlan;
+  return object as SurgicalPlan;
 }
 
 // Convenience exported default

@@ -6,9 +6,52 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import type { DataResearchInput, ResearchData, ComponentElement } from '@/lib/types/tool';
+import type { DataResearchInput, ResearchData, ComponentElement, SurgicalModification, TemplateData } from '@/lib/types/tool';
 import { SYSTEM_PROMPT } from './prompt';
 import { MODELS, DEFAULT_GENERATION_OPTS } from '../../models/model-config';
+
+// Concrete interface for web search result
+interface WebSearchResult {
+  query: string;
+  answer: string;
+}
+
+// Concrete interface for web search parameters
+interface WebSearchParams {
+  query: string;
+  model: string;
+}
+
+// Concrete interface for surgical modification details
+interface SurgicalModificationDetails {
+  from?: string;
+  to?: string;
+  newElement?: ComponentElement;
+  insertPosition?: 'before' | 'after' | 'inside';
+  removeTarget?: string;
+  replaceWith?: ComponentElement;
+  [key: string]: unknown; // Allow additional properties
+}
+
+// Concrete interface for data requirements
+interface DataRequirements {
+  researchQueries: string[];
+  expectedDataTypes: string[];
+  [key: string]: unknown; // Allow additional properties
+}
+
+// Concrete interface for AI response validation
+interface AIResponseError {
+  message: string;
+  code?: string;
+  details?: string;
+}
+
+// Concrete interface for fallback decision
+interface FallbackDecision {
+  shouldFallback: boolean;
+  reason?: string;
+}
 
 // Ultra-flexible schema to prevent AI validation failures
 const SurgicalModificationSchema = z.object({
@@ -41,8 +84,8 @@ function validateInput(input: DataResearchInput): DataResearchInput {
 }
 
 // Mock web search function for now
-async function webSearch({ query, model }: { query: string; model: string }) {
-  return { query, answer: `Mock search result for: ${query}` };
+async function webSearch(params: WebSearchParams): Promise<WebSearchResult> {
+  return { query: params.query, answer: `Mock search result for: ${params.query}` };
 }
 
 // Utility: Build final prompt string by interpolating the surgical plan and research results
@@ -70,7 +113,7 @@ async function buildPrompt(input: DataResearchInput): Promise<string> {
     })
   );
   
-  const researchContext = searchResults.map((result: { query: string; answer: string }) => 
+  const researchContext = searchResults.map((result: WebSearchResult) => 
     `Query: ${result.query}\nAnswer: ${result.answer}`
   ).join('\n\n');
   
@@ -87,12 +130,42 @@ async function buildPrompt(input: DataResearchInput): Promise<string> {
   ].join('\n');
 }
 
+// Transform AI response to match ResearchData interface
+function transformAIResponse(object: Record<string, unknown>): ResearchData {
+  const modificationData = object.modificationData as Record<string, unknown> || {};
+  return {
+    modificationData: {
+      styleChanges: modificationData.styleChanges as Record<string, string> || {},
+      contentChanges: modificationData.contentChanges as Record<string, string> || {},
+      structureChanges: modificationData.structureChanges as ComponentElement[] || [],
+      dataUpdates: {
+        options: (modificationData.dataUpdates as TemplateData)?.options || {},
+        defaults: (modificationData.dataUpdates as TemplateData)?.defaults || {},
+        calculations: (modificationData.dataUpdates as TemplateData)?.calculations || {},
+        metadata: (modificationData.dataUpdates as TemplateData)?.metadata || {}
+      }
+    },
+    populatedModifications: object.populatedModifications as SurgicalModification[] || [],
+    clientInstructions: {
+      summary: (object.clientInstructions as Record<string, unknown>)?.summary as string || 'Data research completed',
+      dataNeeded: (object.clientInstructions as Record<string, unknown>)?.dataNeeded as string[] || [],
+      format: (object.clientInstructions as Record<string, unknown>)?.format as string || 'JSON'
+    }
+  };
+}
+
 // Decide if we should fall back based on result or thrown error
-function shouldFallback(result?: ResearchData, error?: unknown): boolean {
-  if (error) return true;
-  if (!result) return true;
-  if (!result.modificationData || Object.keys(result.modificationData).length === 0) return true;
-  return false;
+function shouldFallback(result?: ResearchData, error?: AIResponseError): FallbackDecision {
+  if (error) {
+    return { shouldFallback: true, reason: `Error occurred: ${error.message}` };
+  }
+  if (!result) {
+    return { shouldFallback: true, reason: 'No result received' };
+  }
+  if (!result.modificationData || Object.keys(result.modificationData).length === 0) {
+    return { shouldFallback: true, reason: 'No modification data provided' };
+  }
+  return { shouldFallback: false };
 }
 
 export async function runDataResearchAgent(
@@ -104,7 +177,7 @@ export async function runDataResearchAgent(
 
   // 2. PRIMARY model attempt
   let primaryResult: ResearchData | undefined;
-  let primaryError: unknown;
+  let primaryError: AIResponseError | undefined;
   try {
     const { object } = await generateObject({
       model: MODELS.PRIMARY,
@@ -112,13 +185,18 @@ export async function runDataResearchAgent(
       schema: ResearchDataSchema,
       ...DEFAULT_GENERATION_OPTS,
     });
-    // Cast through 'any'
-    primaryResult = object as unknown as ResearchData;
+    // Transform the object to match ResearchData interface
+    primaryResult = transformAIResponse(object);
   } catch (err) {
-    primaryError = err;
+    primaryError = {
+      message: err instanceof Error ? err.message : 'Unknown error occurred',
+      code: err instanceof Error && 'code' in err ? String(err.code) : undefined,
+      details: err instanceof Error ? err.stack : undefined
+    };
   }
 
-  if (!shouldFallback(primaryResult, primaryError)) {
+  const fallbackDecision = shouldFallback(primaryResult, primaryError);
+  if (!fallbackDecision.shouldFallback) {
     return primaryResult as ResearchData;
   }
 
@@ -129,7 +207,7 @@ export async function runDataResearchAgent(
     schema: ResearchDataSchema,
     ...DEFAULT_GENERATION_OPTS,
   });
-  return object as unknown as ResearchData;
+  return transformAIResponse(object);
 }
 
 // Convenience exported default

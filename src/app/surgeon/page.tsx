@@ -166,7 +166,7 @@ export default function SurgeonPage() {
                     <h4 className="font-medium mb-2">Code Generation</h4>
                     <div className="p-2 bg-muted rounded text-xs">
                       <p><strong>Success:</strong> {pipelineResults.codeGenerationResult.success ? 'Yes' : 'No'}</p>
-                      <p><strong>Applied:</strong> {pipelineResults.codeGenerationResult.modificationsApplied}</p>
+                      <p><strong>Success:</strong> {pipelineResults.codeGenerationResult.success ? 'Yes' : 'No'}</p>
                     </div>
                   </div>
                 </CardContent>

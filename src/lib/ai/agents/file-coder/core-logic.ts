@@ -1,5 +1,8 @@
-import { generateText } from 'ai';
+import { generateText, Tool } from 'ai';
 import { FILE_CODER_SYSTEM_PROMPT } from './prompt';
+import type { ResearchData as MainResearchData, SurgicalPlan } from '@/lib/types/tool';
+import { MODELS } from '../../models/model-config';
+import { getTemplateByType } from '@/lib/templates/baseline-templates';
 
 // -----------------------------------------------------------------------------
 // Core Logic – FileCoder Agent (Phase 2)
@@ -25,16 +28,30 @@ export interface SurgicalPlanData {
  * Minimal research data interface. Extend as needed.
  */
 export interface ResearchData {
-  [key: string]: unknown;
+  modificationData: Record<string, string | number | boolean | object>;
+  populatedModifications: Array<{
+    operation: string;
+    type: string;
+    target: string;
+    reasoning: string;
+  }>;
+  clientInstructions: {
+    summary: string;
+    dataNeeded: string[];
+    format: string;
+  };
 }
 
 /**
- * Tools bundle expected by the agent – must include MCP file-system tools and
- * the custom linter. We keep the shape fully open to avoid generic params.
+ * Concrete interface for tool execution
  */
-export interface AgentTools {
-  [toolName: string]: unknown;
-}
+/**
+ * Tools array expected by generateText – each entry already conforms to the
+ * AI SDK `Tool` type. Keeping it as a simple alias avoids generics or `any`.
+ */
+export type AgentTools = Record<string, Tool>;
+
+
 
 /**
  * Run the FileCoder agent and return the raw LLM completion text.
@@ -42,31 +59,56 @@ export interface AgentTools {
  * and handling success/error states.
  */
 export async function runFileCoderAgent(
-  surgicalPlan: SurgicalPlanData,
-  researchData: ResearchData,
+  surgicalPlan: SurgicalPlan,
+  researchData: MainResearchData,
   tools: AgentTools,
   workingDirectory: string,
 ): Promise<string> {
   // -------------------------------------------------------------------------
-  // Build the prompt
+  // Get baseline template
+  // -------------------------------------------------------------------------
+  const templateType = surgicalPlan.sourceTemplate as 'calculator' | 'quiz' | 'planner' | 'form' | 'diagnostic';
+  const baselineTemplate = getTemplateByType(templateType);
+  
+  if (!baselineTemplate || !baselineTemplate.componentCode) {
+    throw new Error(`Baseline template not found for type: ${templateType}`);
+  }
+
+  // -------------------------------------------------------------------------
+  // Build the enhanced prompt with template context
   // -------------------------------------------------------------------------
   const modificationsList = surgicalPlan.modifications
     .map((m, idx) => `${idx + 1}. ${m.operation} ${m.type} ${m.target} – ${m.reasoning}`)
     .join('\n');
 
-  const userPrompt = `Surgical Plan:\n${modificationsList}\n\nWorking Directory: ${workingDirectory}`;
+  const researchContext = researchData.modificationData ? 
+    `Research Data Available:\n${JSON.stringify(researchData.modificationData, null, 2)}` : 
+    'No research data available';
+
+  const userPrompt = `
+Surgical Plan:
+${modificationsList}
+
+Working Directory: ${workingDirectory}
+
+Baseline Template: ${baselineTemplate.title} (${baselineTemplate.type})
+Template Industry: ${baselineTemplate.industry}
+
+${researchContext}
+`;
 
   const fullPrompt = `${FILE_CODER_SYSTEM_PROMPT}\n\n${userPrompt}`;
 
   // -------------------------------------------------------------------------
-  // Call the LLM
+  // Call the LLM with enhanced configuration
   // -------------------------------------------------------------------------
   const completion = await generateText({
-    model: 'gpt-4o-mini', // engine is selected higher-level; placeholder here
-    prompt: fullPrompt,
+    // Expose MCP + custom tools so the LLM can call them
     tools,
-    maxTokens: 1024,
-    temperature: 0,
+    model: MODELS.PRIMARY,
+    prompt: fullPrompt,
+    maxTokens: 3000, // Increased for complex modifications
+    temperature: 0.1, // Slight creativity for better modifications
   });
 
   return completion.text;
