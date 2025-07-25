@@ -1,15 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
+import crypto from 'crypto';
+import fs from 'fs/promises';
+import { experimental_createMCPClient as createMCPClient } from 'ai';
+import { z } from 'zod';
 import { runPreprocessingAgent } from '@/lib/ai/agents/preprocessing/core-logic';
 import { runSurgicalPlanningAgent } from '@/lib/ai/agents/surgical-planning/core-logic';
 import { runDataResearchAgent } from '@/lib/ai/agents/data-research/core-logic';
-import { runCodeGenerationAgent } from '@/lib/ai/agents/code-generation/core-logic';
+import { runFileCoderAgent } from '@/lib/ai/agents/file-coder/core-logic';
+import { tsLintCheckerFileTool } from '@/lib/ai/agentic-tools/vercel-tool/ts-lint-checker-file';
 import { Tool } from '@/lib/types/tool';
 
+// ----------------- Local simple types (avoid generics) -----------------
+interface CustomizedTool {
+  id: string;
+  title: string;
+  type: string;
+  componentCode: string;
+  leadCapture: {
+    emailRequired: boolean;
+    trigger: string;
+    incentive: string;
+  };
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface CodeGenerationResult {
+  success: boolean;
+  customizedTool: CustomizedTool;
+  validationErrors?: string[];
+}
+// -----------------------------------------------------------------------
+
 // Utility: sleep helper for back-off
-const sleep = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
+const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 // Exponential-backoff retry wrapper for model calls
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 6): Promise<T> {
+async function withRetry(fn: () => Promise<unknown>, maxAttempts = 6): Promise<unknown> {
   let attempt = 0;
   let lastErr: unknown;
   while (attempt < maxAttempts) {
@@ -69,14 +97,14 @@ export async function POST(request: NextRequest) {
     };
     console.log('🔍 [SURGICAL-PIPELINE] Preprocessing input:', preprocessingInput);
     
-    const preprocessingResult = await withRetry(() => runPreprocessingAgent(preprocessingInput));
+    const preprocessingResult: any = await withRetry(() => runPreprocessingAgent(preprocessingInput));
     console.log('✅ [SURGICAL-PIPELINE] STEP 1 completed successfully');
 
     console.log('=== PREPROCESSING RESULT DEBUG ===');
     console.log('Type:', typeof preprocessingResult);
     console.log('Keys:', Object.keys(preprocessingResult || {}));
     console.log('Full result:', JSON.stringify(preprocessingResult, null, 2));
-    console.log('Has selectedTemplate:', 'selectedTemplate' in (preprocessingResult || {}));
+    console.log('Has selectedTemplate:', Object.prototype.hasOwnProperty.call(preprocessingResult ?? {}, 'selectedTemplate'));
     console.log('selectedTemplate value:', preprocessingResult?.selectedTemplate);
     console.log('================================');
 
@@ -107,15 +135,78 @@ export async function POST(request: NextRequest) {
     console.log('Full result:', JSON.stringify(researchData, null, 2));
     console.log('===================================');
 
-    // STEP 4: Run Code Generation Agent
-    console.log('🔄 [SURGICAL-PIPELINE] STEP 4: Starting code generation agent...');
-    const codeGenerationInput = { surgicalPlan, researchData };
-    console.log('🔍 [SURGICAL-PIPELINE] Code generation input keys:', Object.keys(codeGenerationInput));
-    console.log('🔍 [SURGICAL-PIPELINE] Input validation - surgicalPlan:', !!surgicalPlan);
-    console.log('🔍 [SURGICAL-PIPELINE] Input validation - researchData:', !!researchData);
-    
-    const codeGenerationResult = await withRetry(() => runCodeGenerationAgent(codeGenerationInput));
+    // STEP 4: Run FileCoder Agent
+    console.log('🔄 [SURGICAL-PIPELINE] STEP 4: Starting FileCoder agent...');
+
+    // Workspace setup
+    const sessionId = crypto.randomUUID();
+    const tempDir = path.join('/tmp', sessionId);
+    await fs.mkdir(tempDir, { recursive: true });
+
+    // Copy baseline template (assumes baseline/component.tsx exists)
+    const baselinePath = path.join(process.cwd(), 'baseline', 'component.tsx');
+    await fs.copyFile(baselinePath, path.join(tempDir, 'component.tsx'));
+
+    // ---------------------------------------------------------------------
+    // MCP Client + tools
+    // ---------------------------------------------------------------------
+    const mcpServerUrl = process.env.FILESYSTEM_MCP_SERVER;
+    if (!mcpServerUrl) throw new Error('FILESYSTEM_MCP_SERVER env missing');
+
+    const mcpClient = await createMCPClient({
+      transport: {
+        type: 'sse',
+        url: mcpServerUrl,
+      },
+    });
+
+    const fsTools = await mcpClient.tools({
+      schemas: {
+        set_filesystem_default: { parameters: z.object({ path: z.string() }) },
+        read_file: { parameters: z.object({ path: z.string() }) },
+        update_file: { parameters: z.object({ path: z.string(), new_content: z.string() }) },
+      },
+    });
+
+    const allTools = {
+      ...fsTools,
+      ts_lint_checker_file: tsLintCheckerFileTool,
+    } as Record<string, unknown>;
+
+    // Run the agent
+    const agentRaw = await withRetry(() =>
+      runFileCoderAgent(surgicalPlan as any, researchData as any, allTools, tempDir),
+    );
+
+    let agentResponse: { success?: boolean; message?: string } = {};
+    try {
+      agentResponse = JSON.parse(agentRaw);
+    } catch (err) {
+      console.error('Failed to parse FileCoder response', agentRaw);
+    }
+
     console.log('✅ [SURGICAL-PIPELINE] STEP 4 completed successfully');
+
+    // Read final code from tempDir
+    const finalCode = await fs.readFile(path.join(tempDir, 'component.tsx'), 'utf-8');
+
+    const codeGenerationResult: CodeGenerationResult = {
+      success: !!agentResponse.success,
+      customizedTool: {
+        id: sessionId,
+        title: 'Generated Tool',
+        type: 'form',
+        componentCode: finalCode,
+        leadCapture: { emailRequired: false, trigger: 'after_results', incentive: '' },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      validationErrors: [],
+    };
+
+    // Close MCP and clean up
+    await mcpClient.close();
+    await fs.rm(tempDir, { recursive: true, force: true });
     console.log('🔍 [SURGICAL-PIPELINE] Code generation result keys:', Object.keys(codeGenerationResult || {}));
 
     console.log('=== CODE GENERATION RESULT DEBUG ===');

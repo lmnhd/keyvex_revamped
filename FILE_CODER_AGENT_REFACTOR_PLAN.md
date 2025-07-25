@@ -95,3 +95,46 @@ This document outlines the step-by-step process to refactor the AI pipeline, rep
 
 ### 4.3. Review Dependencies
 - [ ] Check for any lingering imports pointing to the deprecated directories and update them or remove them as necessary. 
+
+---
+
+## Phase 5: Update the Frontend Test Environment
+
+**Goal:** Adapt the primary testing page to work with the new refactored pipeline and properly display the final generated tool.
+
+### 5.1. Modify `/test` Page
+- [ ] Open file: `src/app/tests/code-agent/page.tsx`
+
+### 5.2. Update API Call Logic
+- [ ] **Action:** Modify the `handleSubmit` (or equivalent) function that triggers the API call to `/api/ai/surgical-pipeline/start`.
+- [ ] **Action:** The request body no longer needs to be constructed from a `<textarea>`. Instead, import a pre-saved JSON object representing a complete `CodeGenerationInput` (the mock input for the entire pipeline).
+    - We will use the existing mock file at `src/app/api/tests/code-agent/code-gen-input.json`. This page will now trigger a full, end-to-end pipeline test with a single button click.
+- [ ] **Action:** The body sent in the `fetch` call will now just be this static JSON object.
+
+### 5.3. Update State Management and Display
+- [ ] **Action:** Modify the component's state. Instead of storing the raw `generatedCode` string from the API response, it should now store the entire `tool` object.
+    - `const [generatedTool, setGeneratedTool] = useState<Tool | null>(null);`
+- [ ] **Action:** On a successful API response, set this new state: `setGeneratedTool(response.tool);`.
+- [ ] **Action:** In the JSX, remove the `DynamicComponentRenderer` which was previously used to display the raw code.
+- [ ] **Action:** Replace it with the `ToolRenderer` component.
+- [ ] **Action:** Pass the `generatedTool` object from the state into the `ToolRenderer` component: `<ToolRenderer tool={generatedTool} />`. This will handle the rendering of the final, complete tool.
+
+---
+
+## Phase 6: Update the Primary User-Facing Test Page
+
+**Goal:** Ensure the main test page at `/test` is also updated to use the new pipeline and correctly render the final tool.
+
+### 6.1. Modify `/test` Page
+- [ ] Open file: `src/app/test/page.tsx`
+
+### 6.2. Update API Call Logic
+- [ ] **Action:** Modify the `handleSubmit` (or equivalent) function that triggers the API call to `/api/ai/surgical-pipeline/start`.
+- [ ] **Action:** Ensure the request body sent in the `fetch` call is constructed correctly from the page's input fields (e.g., the `textarea`).
+
+### 6.3. Update State Management and Display
+- [ ] **Action:** Modify the component's state to store the full `Tool` object returned from the API, not just the code.
+    - `const [generatedTool, setGeneratedTool] = useState<Tool | null>(null);`
+- [ ] **Action:** On a successful API response, update the state with the `tool` object from the response.
+- [ ] **Action:** Replace the existing component display logic with the `ToolRenderer` component.
+- [ ] **Action:** Pass the `generatedTool` object from state into the renderer: `<ToolRenderer tool={generatedTool} isLoading={isLoading} />`. 
