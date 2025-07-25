@@ -1,0 +1,577 @@
+{
+    "surgicalPlan": {
+      "sourceTemplate": "calculator",
+      "modifications": [
+        {
+          "operation": "modify",
+          "type": "text",
+          "target": "calculator_title",
+          "details": {
+            "newText": "Wedding Photography Package Calculator"
+          },
+          "reasoning": "Clearly identifies the calculator's purpose for engaged couples"
+        },
+        {
+          "operation": "modify",
+          "type": "text",
+          "target": "calculator_description",
+          "details": {
+            "newText": "Find the perfect wedding photography package for your special day. Get an instant quote based on your unique needs and receive our free Wedding Photography Planning Guide."
+          },
+          "reasoning": "Sets expectations and mentions the lead magnet offer"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "dropdown",
+            "id": "wedding_date",
+            "label": "When is your wedding date?",
+            "options": [
+              "Within 3 months",
+              "3-6 months from now",
+              "6-12 months from now",
+              "More than 12 months from now",
+              "Not set yet"
+            ],
+            "required": true
+          },
+          "reasoning": "Captures wedding timeline to prioritize leads and understand booking urgency"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "dropdown",
+            "id": "package_selection",
+            "label": "Select your preferred photography package:",
+            "options": [
+              "{{photographyPackages}}",
+              "Not sure yet"
+            ],
+            "required": true
+          },
+          "reasoning": "Core service selection that drives the quote calculation"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "dropdown",
+            "id": "venue_location",
+            "label": "Wedding venue location:",
+            "options": [
+              "{{venueLocations}}",
+              "Other location",
+              "Not decided yet"
+            ],
+            "required": true
+          },
+          "reasoning": "Enables travel fee calculation and provides location context"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "slider",
+            "id": "coverage_hours",
+            "label": "Hours of wedding day coverage:",
+            "min": 4,
+            "max": 12,
+            "step": 1,
+            "defaultValue": 8,
+            "required": true
+          },
+          "reasoning": "Essential variable that impacts pricing and package customization"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "checkbox",
+            "id": "engagement_shoot",
+            "label": "Would you like to include an engagement shoot?",
+            "options": [
+              "{{engagementShootOptions}}"
+            ],
+            "required": false
+          },
+          "reasoning": "Popular add-on service that increases package value"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "checkbox",
+            "id": "album_options",
+            "label": "Select wedding album options:",
+            "options": [
+              "{{albumOptions}}"
+            ],
+            "required": false
+          },
+          "reasoning": "High-value add-on that increases overall package price"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "calculator_inputs",
+          "details": {
+            "inputType": "dropdown",
+            "id": "guest_count",
+            "label": "Approximate number of wedding guests:",
+            "options": [
+              "Intimate (1-50)",
+              "Medium (51-100)",
+              "Large (101-200)",
+              "Very large (201+)",
+              "Not sure yet"
+            ],
+            "required": true
+          },
+          "reasoning": "Helps determine photography complexity and potential second shooter needs"
+        },
+        {
+          "operation": "modify",
+          "type": "calculation",
+          "target": "calculator_formula",
+          "details": {
+            "basePrice": "Determined by selected package",
+            "hourlyRate": "Additional hours beyond package inclusion",
+            "travelFee": "Based on venue distance from photographer location",
+            "addOns": "Sum of selected engagement shoot and album options"
+          },
+          "reasoning": "Creates comprehensive pricing formula based on all selected options"
+        },
+        {
+          "operation": "modify",
+          "type": "text",
+          "target": "results_title",
+          "details": {
+            "newText": "Your Custom Wedding Photography Quote"
+          },
+          "reasoning": "Personalizes the results to feel like a custom quote"
+        },
+        {
+          "operation": "modify",
+          "type": "section",
+          "target": "results_section",
+          "details": {
+            "layout": "two_column",
+            "leftColumn": "Quote breakdown with line items",
+            "rightColumn": "Lead capture form"
+          },
+          "reasoning": "Improves visual organization and emphasizes lead capture alongside value"
+        },
+        {
+          "operation": "modify",
+          "type": "text",
+          "target": "lead_capture_headline",
+          "details": {
+            "newText": "Get Your Custom Quote & Free Wedding Photography Planning Guide"
+          },
+          "reasoning": "Emphasizes the immediate value of submitting contact information"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "lead_capture_form",
+          "details": {
+            "inputType": "dropdown",
+            "id": "how_did_you_hear",
+            "label": "How did you hear about us?",
+            "options": [
+              "Google Search",
+              "Instagram",
+              "Facebook",
+              "Referral",
+              "Wedding Venue",
+              "Wedding Planner",
+              "Other"
+            ],
+            "required": true
+          },
+          "reasoning": "Provides marketing attribution data while maintaining dropdown-only requirement"
+        },
+        {
+          "operation": "add",
+          "type": "function",
+          "target": "after_submission",
+          "details": {
+            "action": "send_lead_magnet",
+            "leadMagnetDetails": "Wedding Photography Planning Guide PDF",
+            "followupEmail": "Personalized email with quote details and booking next steps"
+          },
+          "reasoning": "Ensures immediate delivery of lead magnet and sets up follow-up sequence"
+        },
+        {
+          "operation": "add",
+          "type": "section",
+          "target": "after_results",
+          "details": {
+            "content": "Testimonials from happy couples",
+            "callToAction": "Schedule a free consultation call"
+          },
+          "reasoning": "Adds social proof and secondary conversion opportunity"
+        }
+      ],
+      "dataRequirements": {
+        "photographyPackages": "List of 3-5 wedding photography packages with names, features, and price ranges",
+        "engagementShootOptions": "List of 2-3 engagement shoot options with descriptions and price ranges",
+        "albumOptions": "List of 3-4 photo album options with sizes, page counts, and price ranges",
+        "coverageHours": "Range of coverage hours (min 4, max 12) with hourly rate",
+        "travelFeeStructure": "Distance-based travel fee structure (e.g., free within 25 miles, $X per mile beyond)",
+        "venueLocations": "List of popular wedding venues in the target market area with distances",
+        "leadMagnetOffer": "Details for the free wedding photography planning guide"
+      },
+      "templateEnhancements": [
+        "wedding-photography",
+        "package-calculator",
+        "lead-generation"
+      ]
+    },
+    "researchData": {
+      "modificationData": {
+        "package_tiers": [
+          {
+            "name": "Basic",
+            "price": 1500,
+            "hours": 4,
+            "description": "Ceremony and formal portraits coverage"
+          },
+          {
+            "name": "Standard",
+            "price": 2500,
+            "hours": 6,
+            "description": "Getting ready, ceremony, and reception coverage"
+          },
+          {
+            "name": "Premium",
+            "price": 3500,
+            "hours": 8,
+            "description": "Full day coverage with engagement session"
+          },
+          {
+            "name": "Luxury",
+            "price": 5000,
+            "hours": 10,
+            "description": "Complete wedding experience with second photographer"
+          }
+        ],
+        "pricing_data": {
+          "base_rates": {
+            "hourly_rate": 250,
+            "minimum_booking": 4,
+            "deposit_percentage": 30
+          },
+          "travel_fees": {
+            "local_radius": 30,
+            "per_mile_rate": 0.65,
+            "overnight_fee": 350,
+            "destination_fee": 1200
+          },
+          "seasonal_adjustments": {
+            "peak_season_months": [
+              "May",
+              "June",
+              "September",
+              "October"
+            ],
+            "peak_season_markup": 15,
+            "off_season_discount": 10
+          }
+        },
+        "service_options": [
+          {
+            "name": "Second Photographer",
+            "price": 500,
+            "unit": "flat"
+          },
+          {
+            "name": "Engagement Session",
+            "price": 450,
+            "unit": "flat"
+          },
+          {
+            "name": "Bridal Portraits",
+            "price": 350,
+            "unit": "flat"
+          },
+          {
+            "name": "Photo Album (10x10)",
+            "price": 800,
+            "unit": "flat"
+          },
+          {
+            "name": "Online Gallery",
+            "price": 200,
+            "unit": "flat"
+          },
+          {
+            "name": "Raw Files",
+            "price": 300,
+            "unit": "flat"
+          },
+          {
+            "name": "Same-Day Edit",
+            "price": 750,
+            "unit": "flat"
+          },
+          {
+            "name": "Additional Hour",
+            "price": 250,
+            "unit": "per hour"
+          }
+        ]
+      },
+      "populatedModifications": [
+        {
+          "operation": "add",
+          "type": "section",
+          "target": "package_tiers_section",
+          "details": {
+            "title": "Wedding Photography Packages",
+            "description": "Choose from our professionally curated photography packages"
+          },
+          "reasoning": "Adding section header for package tiers with descriptive title"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "package_selector",
+          "details": {
+            "type": "select",
+            "label": "Select Package",
+            "options": [
+              {
+                "value": "basic",
+                "label": "Basic - $1,500 (4 hours)"
+              },
+              {
+                "value": "standard",
+                "label": "Standard - $2,500 (6 hours)"
+              },
+              {
+                "value": "premium",
+                "label": "Premium - $3,500 (8 hours)"
+              },
+              {
+                "value": "luxury",
+                "label": "Luxury - $5,000 (10 hours)"
+              }
+            ],
+            "default": "standard"
+          },
+          "reasoning": "Creating dropdown selector for photography packages with pricing"
+        },
+        {
+          "operation": "add",
+          "type": "text",
+          "target": "package_description",
+          "details": {
+            "content": "Package includes digital images, online gallery, and print release. Additional services available below."
+          },
+          "reasoning": "Adding descriptive text explaining what's included in base packages"
+        },
+        {
+          "operation": "add",
+          "type": "section",
+          "target": "additional_services_section",
+          "details": {
+            "title": "Additional Services",
+            "description": "Customize your package with these popular add-ons"
+          },
+          "reasoning": "Adding section header for additional services options"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "additional_services",
+          "details": {
+            "type": "checkbox-group",
+            "label": "Select Additional Services",
+            "options": [
+              {
+                "value": "second_photographer",
+                "label": "Second Photographer - $500"
+              },
+              {
+                "value": "engagement",
+                "label": "Engagement Session - $450"
+              },
+              {
+                "value": "bridal",
+                "label": "Bridal Portraits - $350"
+              },
+              {
+                "value": "album",
+                "label": "Photo Album (10x10) - $800"
+              },
+              {
+                "value": "raw_files",
+                "label": "Raw Files - $300"
+              },
+              {
+                "value": "same_day",
+                "label": "Same-Day Edit - $750"
+              }
+            ]
+          },
+          "reasoning": "Creating multi-select checkboxes for additional service options"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "extra_hours",
+          "details": {
+            "type": "number",
+            "label": "Additional Hours ($250/hour)",
+            "min": 0,
+            "max": 6,
+            "default": 0
+          },
+          "reasoning": "Adding number input for additional coverage hours"
+        },
+        {
+          "operation": "add",
+          "type": "section",
+          "target": "travel_section",
+          "details": {
+            "title": "Travel Information",
+            "description": "Please provide details if your event is outside our local area (30 mile radius)"
+          },
+          "reasoning": "Adding section for travel-related inputs and calculations"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "travel_distance",
+          "details": {
+            "type": "number",
+            "label": "Distance from photographer (miles)",
+            "min": 0,
+            "default": 0
+          },
+          "reasoning": "Adding input for distance calculation for travel fees"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "overnight_required",
+          "details": {
+            "type": "radio",
+            "label": "Overnight Stay Required?",
+            "options": [
+              {
+                "value": "yes",
+                "label": "Yes (+$350)"
+              },
+              {
+                "value": "no",
+                "label": "No"
+              }
+            ],
+            "default": "no"
+          },
+          "reasoning": "Adding option for overnight accommodation fees"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "destination_wedding",
+          "details": {
+            "type": "radio",
+            "label": "Destination Wedding?",
+            "options": [
+              {
+                "value": "yes",
+                "label": "Yes (+$1,200)"
+              },
+              {
+                "value": "no",
+                "label": "No"
+              }
+            ],
+            "default": "no"
+          },
+          "reasoning": "Adding option for destination wedding fee"
+        },
+        {
+          "operation": "add",
+          "type": "input",
+          "target": "wedding_date",
+          "details": {
+            "type": "date",
+            "label": "Wedding Date",
+            "description": "Peak season (May, June, September, October) includes 15% premium"
+          },
+          "reasoning": "Adding date input to calculate seasonal adjustments"
+        },
+        {
+          "operation": "add",
+          "type": "section",
+          "target": "deposit_section",
+          "details": {
+            "title": "Booking & Deposit",
+            "description": "A 30% non-refundable deposit is required to secure your date"
+          },
+          "reasoning": "Adding section for deposit information"
+        },
+        {
+          "operation": "add",
+          "type": "calculation",
+          "target": "travel_fee_calculation",
+          "details": {
+            "formula": "IF(travel_distance > 30, (travel_distance - 30) * 0.65, 0)",
+            "display": "Travel Fee: ${{result}}"
+          },
+          "reasoning": "Adding calculation for mileage-based travel fees beyond local radius"
+        },
+        {
+          "operation": "add",
+          "type": "calculation",
+          "target": "seasonal_adjustment_calculation",
+          "details": {
+            "formula": "IF(MONTH(wedding_date) IN [5,6,9,10], subtotal * 0.15, IF(MONTH(wedding_date) IN [1,2,12], subtotal * -0.10, 0))",
+            "display": "Seasonal Adjustment: ${{result}}"
+          },
+          "reasoning": "Adding calculation for seasonal pricing adjustments"
+        },
+        {
+          "operation": "add",
+          "type": "calculation",
+          "target": "total_calculation",
+          "details": {
+            "formula": "package_price + additional_services_total + (extra_hours * 250) + travel_fee + (overnight_required == 'yes' ? 350 : 0) + (destination_wedding == 'yes' ? 1200 : 0) + seasonal_adjustment",
+            "display": "Total Package Price: ${{result}}"
+          },
+          "reasoning": "Adding calculation for total package price"
+        },
+        {
+          "operation": "add",
+          "type": "calculation",
+          "target": "deposit_calculation",
+          "details": {
+            "formula": "total * 0.30",
+            "display": "Required Deposit (30%): ${{result}}"
+          },
+          "reasoning": "Adding calculation for required deposit amount"
+        }
+      ],
+      "clientInstructions": {
+        "summary": "Wedding Photography Pricing Research Completed",
+        "dataNeeded": [
+          "Updated market rates for wedding photography packages",
+          "Current travel fee structures for photographers",
+          "Additional service options commonly offered"
+        ],
+        "format": "JSON"
+      }
+    }
+  }

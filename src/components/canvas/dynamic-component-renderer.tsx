@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, ErrorInfo } from 'react';
-import { stripTypeScript, removeImportsAndExports } from '@/lib/transpilation/jsx-transpiler';
+import { transpileComponent } from '@/lib/transpilation/component-transpiler';
 import type { ComponentProps } from '@/lib/types/tool';
 
 // Import Shadcn/UI components for dependency injection
@@ -70,6 +70,14 @@ class ComponentErrorBoundary extends React.Component<
 }
 
 /**
+ * Extract component name from function declaration
+ */
+function extractComponentName(code: string): string {
+  const match = code.match(/function\s+([A-Z][A-Za-z0-9_]*)\s*\(/);
+  return match ? match[1] : 'Component';
+}
+
+/**
  * Dynamic Component Renderer - Simplified for Template System
  * Executes JSX component code safely with Shadcn/UI dependencies
  */
@@ -104,22 +112,64 @@ export function DynamicComponentRenderer({
    * Render the component from code - SIMPLIFIED MINIMAL FUNCTION CONSTRUCTOR
    */
   const renderComponent = useCallback(async (code: string) => {
+    console.log('🔄 [RENDERER] Starting component rendering...');
+    console.log('🔄 [RENDERER] Input code length:', code.length);
+    console.log('🔄 [RENDERER] Input code preview (first 200 chars):', code.substring(0, 200));
+    
     setRenderState(prev => ({ ...prev, isLoading: true, error: null }));
     onRenderStart?.();
 
-    // 1. Strip TypeScript syntax only
-    const cleanCode = stripTypeScript(code);
+    // 1. Transpile TSX -> plain JS
+    console.log('🔧 [RENDERER] Transpiling TSX to JS...');
+    const jsCode = transpileComponent(code);
+    console.log('🔧 [RENDERER] After transpile - length:', jsCode.length);
+    console.log('🔧 [RENDERER] After transpile - preview:', jsCode.substring(0, 200));
     
-    // 2. Remove imports and exports
-    const codeWithoutImports = removeImportsAndExports(cleanCode);
+    // 2. Extract component name
+    const componentName = extractComponentName(jsCode);
+    console.log('🔧 [RENDERER] Extracted component name:', componentName);
     
-    // 3. Create minimal function constructor
+    // 4. Build Function constructor code
+    const functionCode = `${jsCode}; return ${componentName};`;
+    console.log('🔧 [RENDERER] Function constructor code length:', functionCode.length);
+    console.log('🔧 [RENDERER] Function constructor preview (first 300 chars):', functionCode.substring(0, 300));
+    console.log('🔧 [RENDERER] Function constructor preview (last 100 chars):', functionCode.substring(functionCode.length - 100));
+    
+    // 5. Create minimal function constructor - component is already a function declaration
+    console.log('🔧 [RENDERER] Step 3: Creating Function constructor...');
+    try {
+      const createComponent = new Function(
+        'React', 'useState', 'useEffect', 'useCallback', 'useMemo', // React hooks
+        'Button', 'Input', 'Label', 'Card', 'CardContent', 'CardHeader', 'CardTitle', // ShadCN UI
+        'Select', 'SelectContent', 'SelectItem', 'SelectTrigger', 'SelectValue',
+        'Checkbox', 'Slider', 'Badge',
+        functionCode
+      );
+      console.log('✅ [RENDERER] Function constructor created successfully');
+    } catch (err: unknown) {
+      console.error('❌ [RENDERER] Function constructor syntax error:', err);
+      console.error('❌ [RENDERER] Problematic code around error:');
+      
+      // Try to find the problematic area
+      const lines = functionCode.split('\n');
+      lines.forEach((line, index) => {
+        console.error(`${index + 1}: ${line}`);
+        if (index > 50) { // Limit output
+          console.error('... (truncated)');
+          return;
+        }
+      });
+      
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Function constructor syntax error: ${message}`);
+    }
+    
     const createComponent = new Function(
       'React', 'useState', 'useEffect', 'useCallback', 'useMemo', // React hooks
       'Button', 'Input', 'Label', 'Card', 'CardContent', 'CardHeader', 'CardTitle', // ShadCN UI
       'Select', 'SelectContent', 'SelectItem', 'SelectTrigger', 'SelectValue',
       'Checkbox', 'Slider', 'Badge',
-      `return (${codeWithoutImports})`
+      functionCode
     );
     
     // 4. Execute with dependencies

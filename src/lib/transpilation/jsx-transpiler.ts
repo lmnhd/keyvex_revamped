@@ -1,40 +1,10 @@
 /**
- * Simple TypeScript Stripper - No Babel, No Transpilation
+ * jsx-transpiler.ts (deprecated)
+ * —Thin compatibility shim—
+ * All real transpilation lives in [component-transpiler.ts](cci:7://file:///c:/Users/cclem/Dropbox/Source/Projects-25/Keyvex_Project/keyvex_revamped/src/lib/transpilation/component-transpiler.ts:0:0-0:0).
  */
-
-export function stripTypeScript(code: string): string {
-  let cleanCode = code;
-  
-  // Remove interface declarations
-  cleanCode = cleanCode.replace(/interface\s+\w+\s*{[^}]*}/g, '');
-  
-  // Remove type annotations from variables
-  cleanCode = cleanCode.replace(/:\s*\w+(\[\]|\<[^>]*\>)*(\s*\|\s*\w+(\[\]|\<[^>]*\>)*)*(?=\s*[=;,)])/g, '');
-  
-  // Remove generic type parameters
-  cleanCode = cleanCode.replace(/<[^>]*>/g, '');
-  
-  // Remove React.FC and similar type annotations
-  cleanCode = cleanCode.replace(/:\s*React\.FC\s*/g, '');
-  
-  // Remove Record and other utility types
-  cleanCode = cleanCode.replace(/Record<[^>]*>/g, 'any');
-  
-  // Clean up multiple spaces and empty lines
-  cleanCode = cleanCode.replace(/\s+/g, ' ').replace(/\n\s*\n/g, '\n');
-  
-  return cleanCode.trim();
-}
-
-export function removeImportsAndExports(code: string): string {
-  let cleanCode = code;
-  
-  // Remove imports
-  cleanCode = cleanCode.replace(/import\s+.*?from\s+['"].*?['"];?\s*/g, '');
-  
-  // Remove exports
-  cleanCode = cleanCode.replace(/export\s+default\s+/g, '');
-  cleanCode = cleanCode.replace(/export\s*{\s*.*?\s*};?\s*/g, '');
-  
-  return cleanCode.trim();
-}
+export {
+  transpileComponent,
+  transpileComponent as stripTypeScript,
+  transpileComponent as removeImportsAndExports,
+} from './component-transpiler';

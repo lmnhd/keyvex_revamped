@@ -19,7 +19,7 @@ export interface Tool {
   id: string;
   title: string;
   type: ToolType;
-  componentCode: string;
+  componentCode?: string;
   
   // Dual objectives - keep it simple
   leadCapture: {
@@ -79,7 +79,7 @@ export interface TemplateExample {
   title: string;
   description: string;
   industry: string;
-  componentCode: string;
+  componentCode?: string;
   styling: StylingMetadata;
   mockData: TemplateData;
   leadCapture: {

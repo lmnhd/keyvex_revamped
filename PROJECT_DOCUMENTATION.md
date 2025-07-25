@@ -110,14 +110,17 @@ Both objectives must be seamlessly integrated into the user experience, with lea
 2. **Enhanced Preprocessing Agent** - Maps user intent to template + modification signals  
 3. **Template-Aware Surgical Planning Agent** - Creates detailed modification plans with flexible schema validation
 4. **Template-Focused Data Research Agent** - Researches real data with defensive programming and fallbacks
-5. **All-AI Code Generation Agent** - Generates complete modified React components with **robust validation**:
-   - **Babel Parser Validation**: Uses `@babel/parser` to validate JSX syntax before acceptance
-   - **Enhanced Schema**: Minimum 50-character requirement for `generatedCode` field
-   - **Fallback Logic**: Triggers fallback if `isValidReact()` fails syntax parsing
-   - **Placeholder Prevention**: Prompt explicitly forbids unresolved placeholders
-   - **8000 Token Limit**: Prevents JSON truncation in AI responses
-6. **Real-Time Preview** - Tool renderer displays generated tools with lead capture and TypeScript stripping
-7. **Final Product** - Working dual-purpose tool with real data and lead collection
+5. **Revolutionary Code Generation Agent** - **COMPLETELY REBUILT** with tool-assisted generation:
+   - **Tool-Assisted Generation**: Integrated `tsLintCheckerTool` for real-time TypeScript validation during AI processing
+   - **Hard Validation Architecture**: Immediate failure on TypeScript compilation errors or React syntax issues (NO fallbacks)
+   - **Function Constructor Pattern**: Generates import/export-free components for direct canvas execution
+   - **Quality Gate System**: 4-stage validation (Syntax → Schema → Dependency → Functionality)
+   - **Dependency Injection**: Components designed for React hooks and ShadCN UI parameter injection
+   - **Structured Generation Process**: 10-step methodology with refinement loops and validation checkpoints
+   - **Enhanced Model Configuration**: Claude 3.7 Sonnet with 12,000-token thinking budget and up to 8 reasoning steps
+   - **Exponential Backoff Retry**: Automatic retry logic for API overload scenarios with 1s→2s→4s→8s delays
+6. **Real-Time Preview** - Advanced renderer with Function constructor execution and comprehensive error boundaries
+7. **Final Product** - Production-ready dual-purpose tool with validated TypeScript compliance
 
 ## Key Implementation Decisions
 
@@ -195,21 +198,23 @@ The architecture prioritizes working products, predictable changes, and maintain
 - ✅ **Lead Capture Integration**: Every generated tool includes dual-purpose email collection + value delivery
 - ✅ **Real-Time Preview**: Canvas renderer with dynamic component execution and error boundaries
 
-**Critical Technical Fixes:**
-1. **JSON Truncation**: Increased token limit from 1,500 to 8,000 for complete component generation
-2. **Component Rendering**: Fixed export default handling and function extraction in transpiler
-3. **Schema Validation**: Simplified overly strict Zod schemas that blocked AI generation
-4. **Type Safety**: Eliminated all 'any' types while maintaining AI generation flexibility
-5. **Syntax Validation**: Added `@babel/parser` integration to validate JSX before acceptance
-6. **Placeholder Prevention**: Enhanced prompts explicitly forbid unresolved identifiers
+**Revolutionary Architecture Overhaul (January 2025):**
+Following the successful base implementation, the Code Generation Agent underwent a complete architectural rebuild:
 
-**Validation Architecture Analysis:**
-A comprehensive root cause analysis revealed that the code generation agent was accepting any non-empty string without syntax validation. The solution involved:
-- Babel parser integration with `isValidReact()` function
-- Enhanced `shouldFallback()` logic including syntax checking
-- Tightened schema with minimum character requirements
-- Prompt improvements to prevent placeholder generation
-- Post-processing validation before component acceptance
+1. **Tool-Assisted Generation**: Replaced basic validation with integrated `tsLintCheckerTool` that provides real-time TypeScript and ESLint feedback during AI generation
+2. **Hard Validation Philosophy**: Eliminated all fallback mechanisms - components either pass strict TypeScript compilation and React syntax validation or fail immediately
+3. **Function Constructor Execution**: Redesigned component generation for direct execution via `new Function()` with dependency injection, removing complex import/export handling
+4. **Structured Prompt Engineering**: Implemented 10-step generation process with quality gates, refinement loops, and comprehensive validation checklists
+5. **Enhanced Model Integration**: Upgraded to Claude 3.7 Sonnet with thinking mode (12,000 token budget) and multi-step reasoning capabilities
+6. **Babel-Based Transpilation**: Replaced custom TypeScript stripping with production-grade Babel transpilation pipeline
+7. **Exponential Backoff Resilience**: Added automatic retry logic for API overload scenarios with intelligent backoff timing
+
+**Technical Architecture Improvements:**
+- **Dependency Injection Model**: Components receive React hooks and ShadCN UI components as function parameters
+- **Comprehensive Error Boundaries**: Advanced error handling with specific error context and recovery mechanisms  
+- **TypeScript Compliance**: Static analysis during generation ensures production-ready code quality
+- **Pipeline Orchestration**: Improved agent coordination with structured data handoffs and validation checkpoints
+- **Debug Instrumentation**: Extensive logging framework for troubleshooting agent interactions and validation failures
 
 **Template-First Success Metrics:**
 - **Business Input**: "Wedding photography business calculator" 

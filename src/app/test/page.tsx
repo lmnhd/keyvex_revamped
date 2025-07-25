@@ -210,10 +210,34 @@ function NeighborhoodQuiz() {
       }
       
       const result = await response.json();
-      
-      // Set the generated tool as selected
+
+      // Normalize response into a Tool object
+      let newTool: Tool | undefined;
+
       if (result.tool) {
-        setSelectedTool(result.tool);
+        // Legacy shape already contains a Tool
+        newTool = result.tool as Tool;
+      } else if (result.generatedCode) {
+        // New CodeGenerationResult shape – build a minimal Tool wrapper
+        const base = (result.customizedTool ?? {}) as Partial<Tool>;
+
+        newTool = {
+          id: base.id ?? `tool-${Date.now()}`,
+          title: base.title ?? 'Generated Tool',
+          type: base.type ?? 'calculator',
+          componentCode: result.generatedCode,
+          leadCapture: base.leadCapture ?? {
+            emailRequired: false,
+            trigger: 'after_results',
+            incentive: 'View your results'
+          },
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+      }
+
+      if (newTool) {
+        setSelectedTool(newTool);
         setBusinessDescription(''); // Clear input
       } else {
         setProcessError('No tool was generated from the pipeline');
