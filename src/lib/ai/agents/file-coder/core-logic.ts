@@ -1,54 +1,12 @@
-import { generateText, Tool } from 'ai';
-import { FILE_CODER_SYSTEM_PROMPT } from './prompt';
-import type { ResearchData as MainResearchData, SurgicalPlan } from '@/lib/types/tool';
-import { MODELS } from '../../models/model-config';
+import { generateText } from 'ai';
+import { MODELS } from '@/lib/ai/models/model-config';
+import type { SurgicalPlan, ResearchData } from '@/lib/types/tool';
 import { getTemplateByType } from '@/lib/templates/baseline-templates';
+import { createFilesystemTools } from '@/lib/ai/agentic-tools/filesystem';
+import { tsLintCheckerFileTool } from '@/lib/ai/agentic-tools/vercel-tool/ts-lint-checker-file';
+import type { Tool } from 'ai';
+import { FILE_CODER_SYSTEM_PROMPT } from './prompt';
 
-// -----------------------------------------------------------------------------
-// Core Logic – FileCoder Agent (Phase 2)
-// -----------------------------------------------------------------------------
-// NOTE:  "Avoid generic types"  → we do not introduce custom type parameters.
-// Only built-in Promise<T> remains, which is required for async.
-
-/**
- * Minimal, concrete representation of the surgical plan. The real plan may hold
- * more fields, but we only rely on these here to build the LLM prompt.
- */
-export interface SurgicalPlanData {
-  sourceTemplate: string;
-  modifications: Array<{
-    operation: string;
-    type: string;
-    target: string;
-    reasoning: string;
-  }>;
-}
-
-/**
- * Minimal research data interface. Extend as needed.
- */
-export interface ResearchData {
-  modificationData: Record<string, string | number | boolean | object>;
-  populatedModifications: Array<{
-    operation: string;
-    type: string;
-    target: string;
-    reasoning: string;
-  }>;
-  clientInstructions: {
-    summary: string;
-    dataNeeded: string[];
-    format: string;
-  };
-}
-
-/**
- * Concrete interface for tool execution
- */
-/**
- * Tools array expected by generateText – each entry already conforms to the
- * AI SDK `Tool` type. Keeping it as a simple alias avoids generics or `any`.
- */
 export type AgentTools = Record<string, Tool>;
 
 
@@ -57,13 +15,34 @@ export type AgentTools = Record<string, Tool>;
  * Run the FileCoder agent and return the raw LLM completion text.
  * The surrounding orchestrator is responsible for JSON-parsing the response
  * and handling success/error states.
+ * 
+ * This version creates MCP and linter tools internally using just-in-time connections.
  */
 export async function runFileCoderAgent(
   surgicalPlan: SurgicalPlan,
-  researchData: MainResearchData,
-  tools: AgentTools,
+  researchData: ResearchData,
   workingDirectory: string,
 ): Promise<string> {
+  console.log('🔧 [FILE-CODER] Creating tools just-in-time...');
+  
+  // Create local filesystem tools scoped to sandbox root
+  const fsTools = createFilesystemTools();
+  
+  // Combine MCP tools with linter tool
+  // Set sandbox root to Vercel-writable /tmp directory
+  try {
+    await (fsTools["set_filesystem_default"].execute as (args: any, opts?: any) => Promise<any>)({ path: '/tmp/agent-fs' });
+    console.log('📂 [FILE-CODER] Sandbox root set to /tmp/agent-fs');
+  } catch (err) {
+    console.warn('⚠️ [FILE-CODER] Failed to set sandbox root:', err);
+  }
+
+  const tools: AgentTools = {
+    ...fsTools,
+    ts_lint_checker_file: tsLintCheckerFileTool,
+  };
+  
+  console.log('🛠️ [FILE-CODER] Tools created:', Object.keys(tools));
   // -------------------------------------------------------------------------
   // Get baseline template
   // -------------------------------------------------------------------------
@@ -99,17 +78,32 @@ ${researchContext}
 
   const fullPrompt = `${FILE_CODER_SYSTEM_PROMPT}\n\n${userPrompt}`;
 
+  console.log('PROMPT/n', fullPrompt)
+
+  console.log(`🤖 [FILE-CODER] Using LLM model: ${JSON.stringify(MODELS.PRIMARY)}`);
   // -------------------------------------------------------------------------
   // Call the LLM with enhanced configuration
   // -------------------------------------------------------------------------
-  const completion = await generateText({
-    // Expose MCP + custom tools so the LLM can call them
+  let completion;
+  try {
+    completion = await generateText({
+    // Expose local filesystem + validation tools so the LLM can call them
     tools,
     model: MODELS.PRIMARY,
     prompt: fullPrompt,
     maxTokens: 3000, // Increased for complex modifications
     temperature: 0.1, // Slight creativity for better modifications
+    maxSteps: 24
   });
+  } catch (err: any) {
+    console.error('❌ [FILE-CODER] LLM call failed', {
+      message: err.message,
+      toolName: err.toolName,
+      toolArgs: err.toolArgs,
+      issues: err.issues,
+    });
+    throw err; // propagate so API returns 500 with stack
+  }
 
   return completion.text;
 }

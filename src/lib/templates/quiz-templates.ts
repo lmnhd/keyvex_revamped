@@ -1,13 +1,7 @@
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 import type { TemplateExample } from '@/lib/types/tool';
 
-export const HEALTH_QUIZ_TEMPLATE: TemplateExample = {
-  id: 'quiz-001',
-  title: 'Health Assessment Quiz',
-  type: 'quiz',
-  description: 'Interactive health quiz with professional medical styling',
-  industry: 'healthcare',
-  componentCode: convertToThemeAware(`
+const getQuizComponentCode = () => convertToThemeAware(`
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -166,7 +160,17 @@ export default function HealthQuiz() {
     </div>
   );
 }
-`),
+`);
+
+export const HEALTH_QUIZ_TEMPLATE: TemplateExample = {
+  id: 'quiz-001',
+  title: 'Health Assessment Quiz',
+  type: 'quiz',
+  description: 'Interactive health quiz with professional medical styling',
+  industry: 'healthcare',
+  get componentCode() {
+    return getQuizComponentCode();
+  },
   styling: {
     theme: 'auto',
     industry: 'healthcare',

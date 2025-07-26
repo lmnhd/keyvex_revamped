@@ -9,7 +9,8 @@ import { runSurgicalPlanningAgent } from '@/lib/ai/agents/surgical-planning/core
 import { runDataResearchAgent } from '@/lib/ai/agents/data-research/core-logic';
 import { runFileCoderAgent } from '@/lib/ai/agents/file-coder/core-logic';
 import { tsLintCheckerFileTool } from '@/lib/ai/agentic-tools/vercel-tool/ts-lint-checker-file';
-import { Tool, PreprocessingResult, SurgicalPlan, ResearchData } from '@/lib/types/tool';
+import { PreprocessingResult, SurgicalPlan, ResearchData } from '@/lib/types/tool';
+import type { Tool as AiTool } from 'ai';
 import { getTemplateByType } from '@/lib/templates/baseline-templates';
 
 // ----------------- Local simple types (avoid generics) -----------------
@@ -212,15 +213,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Build Tool[] expected by AI SDK
-    const allTools = [
-      ...Object.values(fsTools),
+    // Build Tool map expected by FileCoder Agent
+    const allTools = {
+      ...fsTools,
       tsLintCheckerFileTool,
-    ];
+    } satisfies Record<string, AiTool>;
 
-    // Run the agent
+    // Run the agent (tools are created internally now)
     const agentRaw = await withRetry(() =>
-      runFileCoderAgent(surgicalPlan, researchData, allTools, tempDir),
+      runFileCoderAgent(surgicalPlan, researchData, tempDir),
     );
 
     let agentResponse: { success?: boolean; message?: string } = {};

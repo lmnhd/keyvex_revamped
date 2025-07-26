@@ -7,13 +7,7 @@
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 import type { TemplateExample, DiagnosticResults, DiagnosticTest } from '@/lib/types/tool';
 
-export const WEBSITE_DIAGNOSTIC_TEMPLATE: TemplateExample = {
-  id: 'diagnostic-001',
-  title: 'Website Performance Audit',
-  type: 'diagnostic',
-  description: 'Comprehensive website performance assessment and improvement recommendations',
-  industry: 'technology',
-  componentCode: convertToThemeAware(`
+const getDiagnosticComponentCode = () => convertToThemeAware(`
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -342,7 +336,17 @@ export default function WebsiteDiagnostic() {
     </div>
   );
 }
-`),
+`);
+
+export const WEBSITE_DIAGNOSTIC_TEMPLATE: TemplateExample = {
+  id: 'diagnostic-001',
+  title: 'Website Performance Audit',
+  type: 'diagnostic',
+  description: 'Comprehensive website performance assessment and improvement recommendations',
+  industry: 'technology',
+  get componentCode() {
+    return getDiagnosticComponentCode();
+  },
   styling: {
     theme: 'auto',
     industry: 'technology',

@@ -48,7 +48,7 @@ export default function CodeAgentTestPage() {
       )}
 
       {result && (
-        <pre className="bg-gray-100 p-4 overflow-auto text-sm max-h-[70vh]">
+        <pre className="bg-gray-100 text-gray-800 p-4 overflow-auto text-sm max-h-[70vh]">
           {JSON.stringify(result, null, 2)}
         </pre>
       )}

@@ -17,9 +17,39 @@ Modify the baseline template component based on the surgical plan and research d
 
 <available_tools>
 <file_system_tools>
-- set_filesystem_default: Set working directory
-- read_file: Read file contents
-- update_file: Update file with new content
+- read_file: Read file contents with line numbers (easier for counting!)
+  - Returns content with line numbers like "1: first line", "2: second line"
+  - Use this to see exact line numbers before creating diffs
+- count_lines: Get line count and numbered content for specific ranges
+  - Parameters: { filePath: string, startLine?: number, endLine?: number }
+  - Returns: { totalLines: number, content: string } or { totalLines, selectedLines, content }
+  - Perfect for counting lines before creating unified diffs
+- apply_unified_diff: Apply surgical edits with unified diff (preferred)
+  - Parameters: { filePath: string, unifiedDiff: string }
+  - The unifiedDiff must be in standard unified diff format:
+    --- filename
+    +++ filename
+    @@ -startLine,oldCount +startLine,newCount @@
+    -old line content
+    +new line content
+  - CRITICAL: The line counts in @@ header must match exactly:
+    - oldCount = number of lines being removed (lines starting with -)
+    - newCount = number of lines being added (lines starting with +)
+    - startLine = the line number where the change begins
+  - Example: To replace 1 line with 1 line starting at line 10:
+    @@ -10,1 +10,1 @@
+    -old line content
+    +new line content
+  - Example: To replace 2 lines with 2 lines starting at line 15:
+    @@ -15,2 +15,2 @@
+    -old line 1
+    -old line 2
+    +new line 1
+    +new line 2
+- update_file(path, newContent): Replace full file content ONLY when the entire file must be regenerated. The 'newContent' string is REQUIRED; never call this tool with just 'path'. Always prefer apply_unified_diff for partial edits.
+- set_filesystem_default: Set working directory (sandbox root)
+- create_directory: Create folders (recursive)
+- list_files: List directory contents
 </file_system_tools>
 
 <validation_tools>
@@ -28,37 +58,45 @@ Modify the baseline template component based on the surgical plan and research d
 </available_tools>
 
 <workflow>
-<step_1>
-Setup Workspace:
-1. Use set_filesystem_default to set the working directory
-2. Use read_file to read the baseline template file
-</step_1>
+**Setup Phase:**
+- Set working directory with set_filesystem_default
+- Read the baseline template file with read_file (now includes line numbers!)
+- Use your scratch pad to analyze the file structure
 
-<step_2>
-Apply Modifications:
-1. Analyze the surgical plan modifications
-2. Apply each modification systematically:
-   - Text changes: Update component text, labels, placeholders
-   - Calculation changes: Modify formulas and logic
-   - Input changes: Add/remove/modify form inputs
-   - Function changes: Update event handlers and functions
-   - Section changes: Add/remove/modify UI sections
-   - Styling changes: Update CSS classes and styling
-</step_2>
+**Modification Phase:**
+For each surgical modification:
+- Plan the change in your scratch pad first
+- **Use count_lines tool to get exact line numbers** for the section you want to change
+- **Make ONE small change at a time** (1-3 lines max)
+- Count lines carefully (removed vs added) using the numbered content
+- Create the unified diff string with precise line counts
+- Apply with apply_unified_diff
+- Validate with ts_lint_checker_file
 
-<step_3>
-Validate Code:
-1. Use ts_lint_checker_file to validate the modified code
-2. Fix any TypeScript or ESLint errors
-3. Ensure the component remains functional
-</step_3>
+**Validation Phase:**
+- Run final validation with ts_lint_checker_file
+- Fix any errors found
+- Ensure component remains functional
 
-<step_4>
-Finalize:
-1. Update the file with the final validated code
-2. Return success response with validation results
-</step_4>
+**Completion Phase:**
+- Return success response with results
 </workflow>
+
+<scratch_pad_guidance>
+Use your scratch pad to:
+- Plan modifications before applying
+- **Use count_lines tool to get exact line numbers**
+- Count lines for unified diffs using numbered content
+- Write out diff formats with precise line counts
+- Track progress and debug errors
+
+**CRITICAL: Make tiny changes and use line numbers**
+Example planning:
+1. Use count_lines to get numbered content for the section you want to change
+2. Note the exact line numbers (e.g., "lines 15-17 contain the title")
+3. Plan your change: "Replace line 16 with new title"
+4. Create diff: "@@ -16,1 +16,1 @@" with exact line counts
+</scratch_pad_guidance>
 
 <critical_requirements>
 1. Preserve Component Structure: Keep the basic component structure intact
@@ -68,6 +106,7 @@ Finalize:
 5. Theme-Aware Classes: Use theme-aware CSS classes (text-foreground, bg-background, etc.)
 6. Lead Capture Integration: Maintain or enhance lead capture functionality
 7. Research Data Integration: Incorporate research data into the component where appropriate
+8. DIFF ACCURACY: Always count lines correctly in unified diff headers
 </critical_requirements>
 
 <component_structure_requirements>

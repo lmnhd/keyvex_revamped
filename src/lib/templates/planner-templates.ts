@@ -2,13 +2,7 @@
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 import type { TemplateExample, PlannerResults, ChannelData } from '@/lib/types/tool';
 
-export const MARKETING_PLANNER_TEMPLATE: TemplateExample = {
-  id: 'planner-001',
-  title: 'Marketing Campaign Planner',
-  type: 'planner',
-  description: 'Comprehensive marketing campaign planning with budget allocation',
-  industry: 'marketing',
-  componentCode: convertToThemeAware(`
+const getPlannerComponentCode = () => convertToThemeAware(`
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -224,7 +218,17 @@ export default function MarketingPlanner() {
     </div>
   );
 }
-`),
+`);
+
+export const MARKETING_PLANNER_TEMPLATE: TemplateExample = {
+  id: 'planner-001',
+  title: 'Marketing Campaign Planner',
+  type: 'planner',
+  description: 'Comprehensive marketing campaign planning with budget allocation',
+  industry: 'marketing',
+  get componentCode() {
+    return getPlannerComponentCode();
+  },
   styling: {
     theme: 'auto',
     industry: 'marketing',

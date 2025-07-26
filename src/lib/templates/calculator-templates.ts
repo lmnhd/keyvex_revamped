@@ -2,14 +2,7 @@
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 import type { TemplateExample } from '@/lib/types/tool';
 
-export const FINANCIAL_CALCULATOR_TEMPLATE: TemplateExample = {
-  id: 'calc-001',
-  title: 'Financial Calculator',
-  type: 'calculator',
-  description: 'Calculate return on investment with professional financial styling',
-  industry: 'finance',
-  // @ts-ignore - Template literal contains valid JSX code
-  componentCode: convertToThemeAware(`
+const getCalculatorComponentCode = () => convertToThemeAware(`
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +15,7 @@ export default function FinancialCalculator() {
   const [rate, setRate] = useState(5);
   const [time, setTime] = useState(10);
   const [calculationType, setCalculationType] = useState('compound');
-  const [results, setResults] = useState<{ amount: number; interest: number } | null>(null);
+  const [results, setResults] = useState(null);
 
   const calculateInterest = () => {
     let amount = 0;
@@ -101,11 +94,11 @@ export default function FinancialCalculator() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Amount</p>
-                  <p className="text-xl font-bold">${results.amount.toFixed(2)}</p>
+                  <p className="text-xl font-bold">\${results.amount.toFixed(2)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Interest Earned</p>
-                  <p className="text-xl font-bold">${results.interest.toFixed(2)}</p>
+                  <p className="text-xl font-bold">\${results.interest.toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -115,7 +108,18 @@ export default function FinancialCalculator() {
     </div>
   );
 }
-`),
+`);
+
+export const FINANCIAL_CALCULATOR_TEMPLATE: TemplateExample = {
+  id: 'calc-001',
+  title: 'Financial Calculator',
+  type: 'calculator',
+  description: 'Calculate return on investment with professional financial styling',
+  industry: 'finance',
+  // @ts-ignore - Template literal contains valid JSX code
+  get componentCode() {
+    return getCalculatorComponentCode();
+  },
   styling: {
     theme: 'auto',
     industry: 'finance',

@@ -2,13 +2,7 @@
 import { convertToThemeAware } from '@/lib/utils/theme-conversion';
 import type { TemplateExample, ProposalData } from '@/lib/types/tool';
 
-export const SERVICE_PROPOSAL_TEMPLATE: TemplateExample = {
-  id: 'form-001',
-  title: 'Service Proposal Generator',
-  type: 'form',
-  description: 'Professional service proposal generation with cost estimation',
-  industry: 'consulting',
-  componentCode: convertToThemeAware(`
+const getFormComponentCode = () => convertToThemeAware(`
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -323,7 +317,17 @@ export default function ServiceProposal() {
     </div>
   );
 }
-`),
+`);
+
+export const SERVICE_PROPOSAL_TEMPLATE: TemplateExample = {
+  id: 'form-001',
+  title: 'Service Proposal Generator',
+  type: 'form',
+  description: 'Professional service proposal generation with cost estimation',
+  industry: 'consulting',
+  get componentCode() {
+    return getFormComponentCode();
+  },
   styling: {
     theme: 'auto',
     industry: 'consulting',

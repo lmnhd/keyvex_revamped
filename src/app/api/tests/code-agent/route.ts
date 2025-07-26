@@ -1,36 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { runFileCoderAgent } from '@/lib/ai/agents/file-coder/core-logic';
+import type { CodeGenerationInput } from '@/lib/types/tool';
+import json from './code-gen-input.json';
 
-// Updated Test Endpoint
+// -------------------------------------------------------------
+// VERY SIMPLE TEST ENDPOINT
 // GET /api/tests/code-agent
-// Invokes the new FileCoder surgical pipeline with a fixed prompt
-// and returns the full JSON result so frontend pages can render the
-// generated tool and inspect intermediary data.
+// Runs the code-generation agent with a hard-coded example input so
+// you can quickly iterate on prompt tweaks without invoking the full
+// surgical pipeline.
+// -------------------------------------------------------------
 
-/** Default prompt used if `prompt` query param is not provided */
-const DEFAULT_PROMPT = 'I need a mortgage payment calculator for real estate agents';
+const savedInput: CodeGenerationInput = json as unknown as CodeGenerationInput;
 
-export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
-  const userPrompt = searchParams.get('prompt') ?? DEFAULT_PROMPT;
-
+export async function GET() {
+  console.log('🚀 [TEST-AGENT] Starting FileCoder agent...');
+  
   try {
-    const pipelineRes = await fetch(`${origin}/api/ai/surgical-pipeline/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userPrompt }),
-    });
-
-    // If the downstream route fails, bubble the status back
-    if (!pipelineRes.ok) {
-      const errPayload = await pipelineRes.json();
-      return NextResponse.json(errPayload, { status: pipelineRes.status });
-    }
-
-    // Successful pipeline run
-    const data = await pipelineRes.json();
-    return NextResponse.json(data);
-  } catch (err) {
-    console.error('tests/code-agent route error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.log('🚀 [TEST-AGENT] Calling FileCoder agent...');
+    
+    const result = await runFileCoderAgent(
+      savedInput.surgicalPlan,
+      savedInput.researchData,
+      '/tmp'
+    );
+    
+    console.log('✅ [TEST-AGENT] Agent completed successfully');
+    return NextResponse.json(result, { status: 200 });
+    
+  } catch (error: any) {
+    console.error('🚨 [TEST-AGENT] Failed:', error);
+    return NextResponse.json(
+      { error: error?.message ?? 'Unknown error', stack: error?.stack },
+      { status: 500 },
+    );
   }
 }
