@@ -251,6 +251,11 @@ function makeTool<P extends z.ZodTypeAny>(
 // Exported toolset
 // ---------------------------------------------------------------------------
 
+import { createSmartDiffTool } from './smart-diff';
+
+// Allow other modules to reference current sandbox root (for helpers)
+export const __sandboxRoot = () => sandboxRoot;
+
 export function createFilesystemTools(): Record<string, Tool> {
   return {
     read_file: makeTool('Read file contents from filesystem', readFileParams, readFileExecutor),
@@ -260,6 +265,7 @@ export function createFilesystemTools(): Record<string, Tool> {
     list_files: makeTool('List files/directories within a path', listFilesParams, listFilesExecutor),
     apply_unified_diff: makeTool('Apply surgical edits using unified diff', unifiedDiffParams, applyUnifiedDiffExecutor),
     count_lines: makeTool('Count lines and get numbered content for easier diff creation', countLinesParams, countLinesExecutor),
+    smart_diff: createSmartDiffTool(),
   };
 }
 

@@ -1,0 +1,5 @@
+This is a test file for the AI Patcher tool.
+
+It has some content that can be modified.
+
+End of file.

@@ -11,7 +11,6 @@ import { validateComponentFile } from '../core-logic/ts-lint-checker-file';
  * Returns: { tsErrors: string[]; lintErrors: string[] }
  */
 export const tsLintCheckerFileTool = tool({
-  name: 'ts_lint_checker_file',
   description:
     'Validate a local TypeScript/TSX file using the TypeScript compiler and ESLint. Returns arrays of error messages.',
   parameters: z.object({
